@@ -24,6 +24,8 @@ builder.Services.AddSwaggerGen(options =>
 
 // Add Repository
 builder.Services.AddScoped<ITopicRepository, TopicRepository>();
+builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+builder.Services.AddScoped<IQuestionOptionRepository, QuestionOptionRepository>();
 
 // Add Controllers
 builder.Services.AddControllers();
