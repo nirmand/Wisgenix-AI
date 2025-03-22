@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIUpskillingPlatform.Data", "AIUpskillingPlatform.Data\AIUpskillingPlatform.Data.csproj", "{2EC98017-3DBC-473C-A434-C350CC3E0970}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIUpskillingPlatform.API", "AIUpskillingPlatform.API\AIUpskillingPlatform.API.csproj", "{B97CFEEE-7C9D-40E4-AB8D-FD1101ACE9E3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIUpskillingPlatform.Common", "AIUpskillingPlatform.Common\AIUpskillingPlatform.Common.csproj", "{8E0291C9-7FAD-4FB6-B5FC-E1806294DBFA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2EC98017-3DBC-473C-A434-C350CC3E0970}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2EC98017-3DBC-473C-A434-C350CC3E0970}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2EC98017-3DBC-473C-A434-C350CC3E0970}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2EC98017-3DBC-473C-A434-C350CC3E0970}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B97CFEEE-7C9D-40E4-AB8D-FD1101ACE9E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B97CFEEE-7C9D-40E4-AB8D-FD1101ACE9E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B97CFEEE-7C9D-40E4-AB8D-FD1101ACE9E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B97CFEEE-7C9D-40E4-AB8D-FD1101ACE9E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E0291C9-7FAD-4FB6-B5FC-E1806294DBFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E0291C9-7FAD-4FB6-B5FC-E1806294DBFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E0291C9-7FAD-4FB6-B5FC-E1806294DBFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E0291C9-7FAD-4FB6-B5FC-E1806294DBFA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
