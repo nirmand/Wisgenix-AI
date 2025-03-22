@@ -14,6 +14,5 @@ public class UserResponse
     public int SelectedOptionID { get; set; }
     [ForeignKey("SelectedOptionID")]
     public QuestionOption SelectedOption { get; set; }
-    public int? ObtainedScore {set;get;}
     public DateTime ResponseTime { get; set; } = DateTime.UtcNow;
 }

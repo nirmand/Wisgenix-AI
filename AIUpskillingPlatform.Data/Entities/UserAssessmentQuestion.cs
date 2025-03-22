@@ -12,4 +12,5 @@ public class UserAssessmentQuestion
     public UserAssessment UserAssessment { get; set; }
     [ForeignKey("QuestionID")]
     public Question Question { get; set; }
+    public int? ObtainedScore {set;get;}
 }
