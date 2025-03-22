@@ -8,6 +8,6 @@ public class Topic
     [Key]
     public int ID { get; set; }
     [Required]
-    public string Name { get; set; } = string.Empty;  // Example: ".NET 8", "SQL Server"    
+    public string TopicName { get; set; } = string.Empty;  // Example: ".NET 8", "SQL Server"    
     public ICollection<Question> Questions { get; set; } = new List<Question>();
 }
