@@ -72,7 +72,7 @@ public class QuestionOptionsControllerTests
 
         // Assert
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
-        Assert.Equal("Question option with ID 1 was not found", notFoundResult.Value);
+        Assert.Equal("Question option with ID 1 was not found.", notFoundResult.Value);
     }
 
     [Fact]
@@ -146,7 +146,6 @@ public class QuestionOptionsControllerTests
             QuestionID = 1
         };
         _mockRepository.Setup(repo => repo.QuestionExistsAsync(1)).ReturnsAsync(true);
-        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<QuestionOption>())).Returns((Task<QuestionOption>)Task.CompletedTask);
 
         // Act
         var result = await _controller.UpdateQuestionOption(1, updateDto);
@@ -169,7 +168,7 @@ public class QuestionOptionsControllerTests
 
         // Assert
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-        Assert.Equal("Question option with ID 1 was not found", notFoundResult.Value);
+        Assert.Equal("Question option with ID 1 was not found.", notFoundResult.Value);
     }
 
     [Fact]
@@ -197,6 +196,6 @@ public class QuestionOptionsControllerTests
 
         // Assert
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-        Assert.Equal("Question option with ID 1 was not found", notFoundResult.Value);
+        Assert.Equal("Question option with ID 1 was not found.", notFoundResult.Value);
     }
 } 
