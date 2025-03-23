@@ -19,6 +19,9 @@ public class AppDbContext: DbContext
         // Add model configurations here if needed
     }
 
+    /// <summary>
+    /// Only for SQLite database. If the database does not exist, it will be created.
+    /// </summary>
     public void EnsureDatabaseCreated()
     {
         Database.EnsureCreated();
