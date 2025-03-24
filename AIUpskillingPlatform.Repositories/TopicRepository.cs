@@ -130,4 +130,17 @@ public class TopicRepository : ITopicRepository
             throw;
         }
     }
+
+    public async Task<bool> SubjectExistsAsync(int subjectId)
+    {
+        try
+        {
+            return await _context.Subjects.AnyAsync(s => s.ID == subjectId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while checking if subject exists with ID: {Id}", subjectId);
+            throw;
+        }
+    }
 } 

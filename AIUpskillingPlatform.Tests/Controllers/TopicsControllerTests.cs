@@ -116,8 +116,9 @@ public class TopicsControllerTests
     public async Task CreateTopic_ReturnsCreatedResult_WithTopic()
     {
         // Arrange
-        var createTopicDto = new CreateTopicDto { TopicName = "New Topic" };
-        var createdTopic = new Topic { ID = 1, TopicName = "New Topic" };
+        var createTopicDto = new CreateTopicDto { TopicName = "New Topic", SubjectID = 1 };
+        var createdTopic = new Topic { ID = 1, TopicName = "New Topic", SubjectID = 1 };
+        _mockRepository.Setup(repo => repo.SubjectExistsAsync(1)).ReturnsAsync(true);
         _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<Topic>()))
             .ReturnsAsync(createdTopic);
 
@@ -138,7 +139,8 @@ public class TopicsControllerTests
     public async Task CreateTopic_Returns500_WhenExceptionOccurs()
     {
         // Arrange
-        var createTopicDto = new CreateTopicDto { TopicName = "New Topic" };
+        var createTopicDto = new CreateTopicDto { TopicName = "New Topic", SubjectID = 1 };
+        _mockRepository.Setup(repo => repo.SubjectExistsAsync(1)).ReturnsAsync(true);
         _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<Topic>()))
             .ThrowsAsync(new Exception("Test exception"));
 
@@ -155,9 +157,13 @@ public class TopicsControllerTests
     public async Task UpdateTopic_ReturnsNoContent_WhenTopicExists()
     {
         // Arrange
-        var updateTopicDto = new UpdateTopicDto { TopicName = "Updated Topic" };
+        var originalTopic = new Topic { ID = 1, TopicName = "Original Topic", SubjectID = 1 };
+        var updatedTopic = new Topic { ID = 1, TopicName = "Updated Topic", SubjectID = 1 };
+        var updateTopicDto = new UpdateTopicDto { TopicName = "Updated Topic", SubjectID = 1 };
+        _mockRepository.Setup(repo => repo.SubjectExistsAsync(1)).ReturnsAsync(true);
+        _mockRepository.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(originalTopic);
         _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<Topic>()))
-            .ReturnsAsync(new Topic { ID = 1, TopicName = "Updated Topic" });
+            .ReturnsAsync(updatedTopic);
 
         // Act
         var result = await _controller.UpdateTopic(1, updateTopicDto);
@@ -171,7 +177,8 @@ public class TopicsControllerTests
     public async Task UpdateTopic_ReturnsNotFound_WhenTopicDoesNotExist()
     {
         // Arrange
-        var updateTopicDto = new UpdateTopicDto { TopicName = "Updated Topic" };
+        var updateTopicDto = new UpdateTopicDto { TopicName = "Updated Topic", SubjectID = 1 };
+        _mockRepository.Setup(repo => repo.SubjectExistsAsync(1)).ReturnsAsync(true);
         _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<Topic>()))
             .ThrowsAsync(new TopicNotFoundException(1));
 
@@ -181,14 +188,17 @@ public class TopicsControllerTests
         // Assert
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
         Assert.Equal("Topic with ID 1 was not found.", notFoundResult.Value);
-        _mockRepository.Verify(repo => repo.UpdateAsync(It.IsAny<Topic>()), Times.Once);
+        _mockRepository.Verify(repo => repo.UpdateAsync(It.IsAny<Topic>()), Times.Never);
     }
 
     [Fact]
     public async Task UpdateTopic_Returns500_WhenExceptionOccurs()
     {
         // Arrange
-        var updateTopicDto = new UpdateTopicDto { TopicName = "Updated Topic" };
+        var originalTopic = new Topic { ID = 1, TopicName = "Original Topic", SubjectID = 1 };
+        var updateTopicDto = new UpdateTopicDto { TopicName = "Updated Topic", SubjectID = 1 };
+        _mockRepository.Setup(repo => repo.SubjectExistsAsync(1)).ReturnsAsync(true);
+        _mockRepository.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(originalTopic);
         _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<Topic>()))
             .ThrowsAsync(new Exception("Test exception"));
 
@@ -249,34 +259,35 @@ public class TopicsControllerTests
     }
 
     [Theory]
-    //[InlineData("")]
-    //[InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData(null)]
     [InlineData("A")]
     [InlineData("This is a very long topic name that exceeds the maximum length of 200 characters allowed by the system. This should be rejected by the validation.")]
     public async Task CreateTopic_ValidatesTopicName(string topicName)
     {
         // Arrange
-    var createTopicDto = new CreateTopicDto { TopicName = topicName };
-    var createdTopic = new Topic { ID = 1, TopicName = topicName };
+        var createTopicDto = new CreateTopicDto { TopicName = topicName, SubjectID = 1 };
+        var createdTopic = new Topic { ID = 1, TopicName = topicName, SubjectID = 1 };
+        _mockRepository.Setup(repo => repo.SubjectExistsAsync(1)).ReturnsAsync(true);
+        if (!string.IsNullOrEmpty(topicName))
+        {
+            _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<Topic>()))
+                .ReturnsAsync(createdTopic);
+        }
+        else
+        {
+            _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<Topic>()));
+        }
 
-    if (!string.IsNullOrEmpty(topicName) && topicName.Length <= 200)
-    {
-        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<Topic>()))
-            .ReturnsAsync(createdTopic);
-    }
-    else
-    {
-        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<Topic>()));
-    }
+        // Act
+        var result = await _controller.CreateTopic(createTopicDto);
 
-    // Act
-    var result = await _controller.CreateTopic(createTopicDto);
-
-    // Assert
-        if (string.IsNullOrEmpty(topicName) || topicName.Length > 200)
+        // Assert
+        if (string.IsNullOrWhiteSpace(topicName))
         {
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("Invalid topic name", badRequestResult.Value);
+            Assert.Equal("Topic name is required", badRequestResult.Value);
         }
         else
         {
@@ -289,4 +300,182 @@ public class TopicsControllerTests
             _mockRepository.Verify(repo => repo.CreateAsync(It.IsAny<Topic>()), Times.Once);
         }
     }
-} 
+
+    [Fact]
+    public async Task CreateTopic_WithoutSubject_ReturnsBadRequest()
+    {
+        // Arrange
+        var createDto = new CreateTopicDto 
+        { 
+            TopicName = "Test Topic",
+            SubjectID = 0  // Invalid Subject ID
+        };
+        _mockRepository.Setup(repo => repo.SubjectExistsAsync(0)).ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.CreateTopic(createDto);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Subject ID is required", badRequestResult.Value);
+    }
+
+    [Fact]
+    public async Task CreateTopic_WithInvalidSubject_ReturnsBadRequest()
+    {
+        // Arrange
+        var createDto = new CreateTopicDto 
+        { 
+            TopicName = "Test Topic",
+            SubjectID = 999  // Non-existent Subject ID
+        };
+        _mockRepository.Setup(repo => repo.SubjectExistsAsync(999)).ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.CreateTopic(createDto);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Subject with ID 999 does not exist", badRequestResult.Value);
+    }
+
+    [Fact]
+    public async Task CreateTopic_WithValidData_ReturnsCreatedAtAction()
+    {
+        // Arrange
+        var createDto = new CreateTopicDto 
+        { 
+            TopicName = "Test Topic",
+            SubjectID = 1  // Added SubjectID
+        };
+        _mockRepository.Setup(repo => repo.SubjectExistsAsync(1)).ReturnsAsync(true);  // Added Subject validation
+        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<Topic>()))
+            .ReturnsAsync(new Topic 
+            { 
+                ID = 1, 
+                TopicName = createDto.TopicName,
+                SubjectID = createDto.SubjectID  // Added SubjectID
+            });
+
+        // Act
+        var result = await _controller.CreateTopic(createDto);
+
+        // Assert
+        var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+        var returnedTopic = Assert.IsType<TopicDto>(createdAtActionResult.Value);
+        Assert.Equal(createDto.TopicName, returnedTopic.TopicName);
+        Assert.Equal(createDto.SubjectID, returnedTopic.SubjectID);  // Added SubjectID assertion
+    }
+
+    [Fact]
+    public async Task CreateTopic_WithInvalidSubjectId_ReturnsBadRequest()
+    {
+        // Arrange
+        var createDto = new CreateTopicDto 
+        { 
+            TopicName = "Test Topic",
+            SubjectID = 999
+        };
+        _mockRepository.Setup(repo => repo.SubjectExistsAsync(999)).ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.CreateTopic(createDto);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Subject with ID 999 does not exist", badRequestResult.Value);
+    }
+
+    [Fact]
+    public async Task UpdateTopic_WithValidData_ReturnsNoContent()
+    {
+        // Arrange
+        var updateDto = new UpdateTopicDto 
+        { 
+            TopicName = "Updated Topic",
+            SubjectID = 1  // Added SubjectID
+        };
+        var existingTopic = new Topic { ID = 1, TopicName = "Test Topic", SubjectID = 1 };
+        _mockRepository.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(existingTopic);
+        _mockRepository.Setup(repo => repo.SubjectExistsAsync(1)).ReturnsAsync(true);  // Added Subject validation
+
+        // Act
+        var result = await _controller.UpdateTopic(1, updateDto);
+
+        // Assert
+        Assert.IsType<NoContentResult>(result);
+        _mockRepository.Verify(repo => repo.UpdateAsync(It.Is<Topic>(t => 
+            t.TopicName == updateDto.TopicName && 
+            t.SubjectID == updateDto.SubjectID)), 
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateTopic_WithInvalidSubjectId_ReturnsBadRequest()
+    {
+        // Arrange
+        var updateDto = new UpdateTopicDto 
+        { 
+            TopicName = "Updated Topic",
+            SubjectID = 999
+        };
+        _mockRepository.Setup(repo => repo.SubjectExistsAsync(999)).ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.UpdateTopic(1, updateDto);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal("Subject with ID 999 does not exist", badRequestResult.Value);
+    }
+
+    [Fact]
+    public async Task GetTopics_ReturnsOkResult_WithTopics()
+    {
+        // Arrange
+        var topics = new List<Topic>
+        {
+            new Topic 
+            { 
+                ID = 1, 
+                TopicName = "Test Topic", 
+                SubjectID = 1,  // Added SubjectID
+                Subject = new Subject { ID = 1, SubjectName = "Test Subject" }  // Added Subject
+            }
+        };
+        _mockRepository.Setup(repo => repo.GetAllAsync()).ReturnsAsync(topics);
+
+        // Act
+        var result = await _controller.GetTopics();
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedTopics = Assert.IsAssignableFrom<IEnumerable<TopicDto>>(okResult.Value);
+        var topic = returnedTopics.First();
+        Assert.Equal("Test Topic", topic.TopicName);
+        Assert.Equal(1, topic.SubjectID);  // Added SubjectID assertion
+    }
+
+    [Fact]
+    public async Task GetTopic_WithValidId_ReturnsOkResult()
+    {
+        // Arrange
+        var topic = new Topic 
+        { 
+            ID = 1, 
+            TopicName = "Test Topic",
+            SubjectID = 1,  // Added SubjectID
+            Subject = new Subject { ID = 1, SubjectName = "Test Subject" }  // Added Subject
+        };
+        _mockRepository.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(topic);
+
+        // Act
+        var result = await _controller.GetTopic(1);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedTopic = Assert.IsType<TopicDto>(okResult.Value);
+        Assert.Equal(topic.TopicName, returnedTopic.TopicName);
+        Assert.Equal(topic.SubjectID, returnedTopic.SubjectID);  // Added SubjectID assertion
+    }
+}

@@ -129,6 +129,7 @@ public class QuestionsControllerTests
             GeneratedBy = QuestionSource.Imported
         };
         _mockRepository.Setup(repo => repo.TopicExistsAsync(1)).ReturnsAsync(true);
+        _mockRepository.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(new Question { ID = 1 });
 
         // Act
         var result = await _controller.UpdateQuestion(1, updateDto);
@@ -180,5 +181,53 @@ public class QuestionsControllerTests
         // Assert
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
         Assert.Equal("Question with ID 1 was not found.", notFoundResult.Value);
+    }
+
+    [Fact]
+    public async Task CreateQuestion_WithValidUrl_ReturnsCreatedAtAction()
+    {
+        // Arrange
+        var createDto = new CreateQuestionDto 
+        { 
+            QuestionText = "Test Question",
+            TopicID = 1,
+            DifficultyLevel = 2,
+            MaxScore = 5,
+            GeneratedBy = QuestionSource.AI,
+            QuestionSourceReference = "https://valid-url.com/reference"
+        };
+        _mockRepository.Setup(repo => repo.TopicExistsAsync(1)).ReturnsAsync(true);
+        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<Question>()))
+            .ReturnsAsync(new Question { ID = 1, QuestionText = createDto.QuestionText });
+
+        // Act
+        var result = await _controller.CreateQuestion(createDto);
+
+        // Assert
+        var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+        var returnedQuestion = Assert.IsType<QuestionDto>(createdAtActionResult.Value);
+        Assert.Equal(createDto.QuestionText, returnedQuestion.QuestionText);
+    }
+
+    [Fact]
+    public async Task CreateQuestion_WithInvalidUrl_ReturnsBadRequest()
+    {
+        // Arrange
+        var createDto = new CreateQuestionDto 
+        { 
+            QuestionText = "Test Question",
+            TopicID = 1,
+            DifficultyLevel = 2,
+            MaxScore = 5,
+            GeneratedBy = QuestionSource.AI,
+            QuestionSourceReference = "invalid-url"
+        };
+        _controller.ModelState.AddModelError("QuestionSourceReference", "Invalid URL format");
+
+        // Act
+        var result = await _controller.CreateQuestion(createDto);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result.Result);
     }
 } 

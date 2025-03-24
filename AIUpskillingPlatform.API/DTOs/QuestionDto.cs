@@ -22,6 +22,9 @@ public class CreateQuestionDto
 
     [Required]
     public QuestionSource GeneratedBy { get; set; }
+
+    [Url]
+    public string? QuestionSourceReference { get; set; }
 }
 
 public class UpdateQuestionDto
@@ -43,6 +46,9 @@ public class UpdateQuestionDto
 
     [Required]
     public QuestionSource GeneratedBy { get; set; }
+
+    [Url]
+    public string? QuestionSourceReference { get; set; }
 }
 
 public class QuestionDto
@@ -54,4 +60,5 @@ public class QuestionDto
     public int MaxScore { get; set; }
     public QuestionSource GeneratedBy { get; set; }
     public string TopicName { get; set; } = string.Empty;
+    public string? QuestionSourceReference { get; set; }
 } 

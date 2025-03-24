@@ -99,7 +99,8 @@ public class QuestionsController : ControllerBase
                 TopicID = createQuestionDto.TopicID,
                 DifficultyLevel = createQuestionDto.DifficultyLevel,
                 MaxScore = createQuestionDto.MaxScore,
-                GeneratedBy = createQuestionDto.GeneratedBy
+                GeneratedBy = createQuestionDto.GeneratedBy,
+                QuestionSourceReference = createQuestionDto.QuestionSourceReference
             };
 
             var createdQuestion = await _questionRepository.CreateAsync(question);
@@ -137,15 +138,19 @@ public class QuestionsController : ControllerBase
                 return BadRequest($"Topic with ID {updateQuestionDto.TopicID} does not exist");
             }
 
-            var question = new Question
+            var question = await _questionRepository.GetByIdAsync(id);
+            if (question == null)
             {
-                ID = id,
-                QuestionText = updateQuestionDto.QuestionText,
-                TopicID = updateQuestionDto.TopicID,
-                DifficultyLevel = updateQuestionDto.DifficultyLevel,
-                MaxScore = updateQuestionDto.MaxScore,
-                GeneratedBy = updateQuestionDto.GeneratedBy
-            };
+                _logger.LogWarning("Question with ID: {Id} was not found for update", id);
+                return NotFound($"Question with ID {id} was not found.");
+            }
+
+            question.QuestionText = updateQuestionDto.QuestionText;
+            question.TopicID = updateQuestionDto.TopicID;
+            question.DifficultyLevel = updateQuestionDto.DifficultyLevel;
+            question.MaxScore = updateQuestionDto.MaxScore;
+            question.GeneratedBy = updateQuestionDto.GeneratedBy;
+            question.QuestionSourceReference = updateQuestionDto.QuestionSourceReference;
 
             await _questionRepository.UpdateAsync(question);
             _logger.LogInformation("Successfully updated question with ID: {Id}", id);

@@ -9,4 +9,5 @@ public interface ITopicRepository
     Task<Topic> CreateAsync(Topic topic);
     Task<Topic> UpdateAsync(Topic topic);
     Task DeleteAsync(int id);
+    Task<bool> SubjectExistsAsync(int subjectId);
 } 

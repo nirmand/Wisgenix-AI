@@ -27,7 +27,7 @@ public class TopicsController : ControllerBase
         {
             _logger.LogInformation("Getting all topics");
             var topics = await _topicRepository.GetAllAsync();
-            var topicDtos = topics.Select(t => new TopicDto { ID = t.ID, TopicName = t.TopicName });
+            var topicDtos = topics.Select(t => new TopicDto { ID = t.ID, TopicName = t.TopicName, SubjectID = t.SubjectID });  
             _logger.LogInformation("Successfully retrieved {Count} topics", topics.Count());
             return Ok(topicDtos);
         }
@@ -45,7 +45,7 @@ public class TopicsController : ControllerBase
         {
             _logger.LogInformation("Getting topic with ID: {Id}", id);
             var topic = await _topicRepository.GetByIdAsync(id);
-            var topicDto = new TopicDto { ID = topic.ID, TopicName = topic.TopicName };
+            var topicDto = new TopicDto { ID = topic.ID, TopicName = topic.TopicName, SubjectID = topic.SubjectID };
             _logger.LogInformation("Successfully retrieved topic with ID: {Id}", id);
             return Ok(topicDto);
         }
@@ -66,20 +66,42 @@ public class TopicsController : ControllerBase
     {
         try
         {
-            if (!ModelState.IsValid)
+            if (createTopicDto.SubjectID <= 0)
             {
-                return BadRequest("Invalid topic name");
+                return BadRequest("Subject ID is required");
             }
-            _logger.LogInformation("Creating new topic with name: {TopicName}", createTopicDto.TopicName);
-            var topic = new Topic { TopicName = createTopicDto.TopicName };
+
+            if (String.IsNullOrWhiteSpace(createTopicDto.TopicName))
+            {
+                return BadRequest("Topic name is required");
+            }
+
+            // Check if subject exists
+            if (!await _topicRepository.SubjectExistsAsync(createTopicDto.SubjectID))
+            {
+                return BadRequest($"Subject with ID {createTopicDto.SubjectID} does not exist");
+            }
+
+            var topic = new Topic
+            {
+                TopicName = createTopicDto.TopicName,
+                SubjectID = createTopicDto.SubjectID
+            };
+
             var createdTopic = await _topicRepository.CreateAsync(topic);
-            var topicDto = new TopicDto { ID = createdTopic.ID, TopicName = createdTopic.TopicName };
-            _logger.LogInformation("Successfully created topic with ID: {Id}", createdTopic.ID);
+            
+            var topicDto = new TopicDto
+            {
+                ID = createdTopic.ID,
+                TopicName = createdTopic.TopicName,
+                SubjectID = createdTopic.SubjectID
+            };
+
             return CreatedAtAction(nameof(GetTopic), new { id = createdTopic.ID }, topicDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while creating topic with name: {TopicName}", createTopicDto.TopicName);
+            _logger.LogError(ex, "Error occurred while creating topic");
             return StatusCode(500, "An error occurred while creating the topic");
         }
     }
@@ -89,16 +111,23 @@ public class TopicsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Updating topic with ID: {Id}", id);
-            var topic = new Topic { ID = id, TopicName = updateTopicDto.TopicName };
+            // Check if subject exists
+            if (!await _topicRepository.SubjectExistsAsync(updateTopicDto.SubjectID))
+            {
+                return BadRequest($"Subject with ID {updateTopicDto.SubjectID} does not exist");
+            }
+
+            var topic = await _topicRepository.GetByIdAsync(id);
+            if (topic == null)
+            {
+                return NotFound($"Topic with ID {id} was not found.");
+            }
+
+            topic.TopicName = updateTopicDto.TopicName;
+            topic.SubjectID = updateTopicDto.SubjectID;
+
             await _topicRepository.UpdateAsync(topic);
-            _logger.LogInformation("Successfully updated topic with ID: {Id}", id);
             return NoContent();
-        }
-        catch (TopicNotFoundException ex)
-        {
-            _logger.LogWarning(ex, "Topic with ID: {Id} was not found for update", id);
-            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
