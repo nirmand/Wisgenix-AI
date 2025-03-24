@@ -12,6 +12,7 @@ public class AppDbContext: DbContext
     public DbSet<QuestionOption> QuestionOptions { get; set; }
     public DbSet<UserResponse> UserResponses { get; set; }
     public DbSet<Topic> Topics { get; set; }
+    public DbSet<Subject> Subjects { get; set; }
     public DbSet<LearningRecommendation> LearningRecommendations { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

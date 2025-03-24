@@ -17,6 +17,7 @@ public class Question
     public int MaxScore { get; set; } = 1; // Max score for this question (default 1)
     [Required]
     public  QuestionSource GeneratedBy { get; set; } = QuestionSource.AI;
+    public string QuestionSourceReference {get;set;} // URL used to generate this question
 
     [ForeignKey("TopicID")]
     public Topic Topic { get; set; } // Foreign Key
