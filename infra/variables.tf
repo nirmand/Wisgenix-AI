@@ -45,3 +45,42 @@ variable "db_connection_string" {
   type        = string
   sensitive   = true
 }
+
+variable "app_service_os_type" {
+  description = "The operating system for the App Service."
+  type        = string
+  default     = "Windows"
+}
+
+variable "app_service_sku" {
+  description = "The SKU for the App Service."
+  type        = string
+  default     = "S1"
+}
+
+variable "tenant_id" {
+  description = "The tenant ID for the Azure subscription"
+  type        = string
+}
+
+variable "subscription_id" {
+  description = "The subscription ID for the Azure subscription"
+  type        = string
+}
+
+variable "client_id" {
+  description = "The client ID for the Azure service principal"
+  type        = string
+}
+
+variable "client_secret" {
+  description = "The client secret for the Azure service principal"
+  type        = string
+  sensitive   = true
+}
+
+variable "db_password" {
+  description = "The password for the database"
+  type        = string
+  sensitive   = true
+}

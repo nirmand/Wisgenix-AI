@@ -2,7 +2,7 @@ resource "azurerm_key_vault" "kv" {
   name                        = var.kv_name
   location                    = var.location
   resource_group_name         = var.resource_group
-  tenant_id                   = "your-tenant-id"
+  tenant_id                   = var.tenant_id
   sku_name                    = "standard"
 }
 

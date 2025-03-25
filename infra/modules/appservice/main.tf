@@ -1,21 +1,16 @@
-resource "azurerm_app_service_plan" "app_plan" {
+resource "azurerm_service_plan" "app_plan" {
   name                = var.app_service_plan
   location            = var.location
   resource_group_name = var.resource_group
-  kind                = "Linux"
-  reserved            = true
-
-  sku {
-    tier = "Standard"
-    size = "S1"
-  }
+  os_type             = var.app_service_os_type
+  sku_name            = var.app_service_sku  
 }
 
-resource "azurerm_app_service" "app" {
+resource "azurerm_linux_web_app" "app" {
   name                = var.app_name
   location            = var.location
   resource_group_name = var.resource_group
-  app_service_plan_id = azurerm_app_service_plan.app_plan.id
+  service_plan_id = azurerm_service_plan.app_plan.id
 
   site_config {
     always_on = true
