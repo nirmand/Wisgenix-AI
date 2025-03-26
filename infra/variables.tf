@@ -68,6 +68,11 @@ variable "subscription_id" {
   type        = string
 }
 
+variable "service_principle_id" {
+  description = "The ID for the Azure service principal"
+  type        = string
+}
+
 variable "client_id" {
   description = "The client ID for the Azure service principal"
   type        = string
@@ -83,4 +88,10 @@ variable "db_password" {
   description = "The password for the database"
   type        = string
   sensitive   = true
+}
+
+variable "app_service_always_on" {
+  description = "Enable Always On for the App Service"
+  type        = bool
+  default     = true
 }

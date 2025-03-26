@@ -16,6 +16,7 @@ module "appservice" {
   db_connection_string = var.db_connection_string
   app_service_os_type  = var.app_service_os_type
   app_service_sku      = var.app_service_sku
+  app_service_always_on = var.app_service_always_on
 }
 
 module "database" {
@@ -28,10 +29,11 @@ module "database" {
 }
 
 module "keyvault" {
-  source         = "./modules/keyvault"
-  resource_group = var.resource_group
-  location       = var.location
-  kv_name        = var.kv_name
-  db_password    = var.admin_password
-  tenant_id      = var.tenant_id
+  source               = "./modules/keyvault"
+  resource_group       = var.resource_group
+  location             = var.location
+  kv_name              = var.kv_name
+  db_password          = var.admin_password
+  tenant_id            = var.tenant_id
+  service_principle_id = var.service_principle_id
 }
