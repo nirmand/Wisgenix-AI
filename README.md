@@ -17,7 +17,7 @@ dotnet ef migrations add Migration-2103251900 --project AIUpskillingPlatform.Dat
 <!-- eraser-additional-content -->
 ## Diagrams
 <!-- eraser-additional-files -->
-<a href="/README-Architecture-1.eraserdiagram" data-element-id="9z4v58s_OgywY0WvEP95s"><img src="/.eraser/9nB0SzDNUV8TqNyyamfD___MFOgFv3B0abgoUdur6bj80pO7V83___---diagram----f5768be3bf9b21677e30ccbb50d9440a-Architecture.png" alt="" data-element-id="9z4v58s_OgywY0WvEP95s" /></a>
+<a href="/README-Architecture-1.eraserdiagram" data-element-id="9z4v58s_OgywY0WvEP95s"><img src="/.eraser/9nB0SzDNUV8TqNyyamfD___MFOgFv3B0abgoUdur6bj80pO7V83___---diagram----2cea1275645dfe166be12a8b4180f69f-Architecture.png" alt="" data-element-id="9z4v58s_OgywY0WvEP95s" /></a>
 <!-- end-eraser-additional-files -->
 <!-- end-eraser-additional-content -->
 <!--- Eraser file: https://app.eraser.io/workspace/9nB0SzDNUV8TqNyyamfD --->
