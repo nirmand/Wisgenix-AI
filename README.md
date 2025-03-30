@@ -11,28 +11,7 @@ dotnet ef migrations add InitialCreate --project AIUpskillingPlatform.Data --sta
 dotnet ef database update --project AIUpskillingPlatform.Data --startup-project AIUpskillingPlatform.API
 dotnet ef migrations add Migration-2103251900 --project AIUpskillingPlatform.Data --startup-project AIUpskillingPlatform.API
 ```
-```
-title Architecture
 
-AI Engine [icon: azure-ai]
-
-Azure [icon: azure] {
-  Skills Assessment API [icon: azure-web-app, label: "Questions API"]
-  SQL Database [icon: azure-sql-database, label: "Questions DB"]
-    Subject [icon: azure-table]
-    Topic [icon: azure-table]
-    Question [icon: azure-table]
-    QuestionOptions [icon: azure-table]
-  Key Vault [icon: azure-key-vault] 
-}
-
-// Connections
-AI Engine > Skills Assessment API: API calls
-Skills Assessment API > SQL Database: CRUD ops
-Skills Assessment API > Key Vault: Retrieve secrets
-SQL Database > Subject, Topic, Question, QuestionOptions: Tables
-```
-`﻿` 
 
 
 <!-- eraser-additional-content -->
