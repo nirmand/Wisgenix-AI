@@ -8,14 +8,14 @@ provider "azurerm" {
 }
 
 module "appservice" {
-  source               = "./modules/appservice"
-  resource_group       = var.resource_group
-  location             = var.location
-  app_name             = var.app_name
-  app_service_plan     = var.app_service_plan
-  db_connection_string = var.db_connection_string
-  app_service_os_type  = var.app_service_os_type
-  app_service_sku      = var.app_service_sku
+  source                = "./modules/appservice"
+  resource_group        = var.resource_group
+  location              = var.location
+  app_name              = var.app_name
+  app_service_plan      = var.app_service_plan
+  db_connection_string  = var.db_connection_string
+  app_service_os_type   = var.app_service_os_type
+  app_service_sku       = var.app_service_sku
   app_service_always_on = var.app_service_always_on
 }
 
@@ -36,4 +36,5 @@ module "keyvault" {
   db_password          = var.admin_password
   tenant_id            = var.tenant_id
   service_principle_id = var.service_principle_id
+  msi_id               = var.msi_id
 }
