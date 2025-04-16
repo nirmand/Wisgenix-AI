@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace AIUpskillingPlatform.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/content")]
 public class QuestionsController : ControllerBase
 {
     private readonly IQuestionRepository _questionRepository;
@@ -20,7 +20,7 @@ public class QuestionsController : ControllerBase
         _logger = logger;
     }
 
-    [HttpGet]
+    [HttpGet("questions")]
     public async Task<ActionResult<IEnumerable<QuestionDto>>> GetQuestions()
     {
         try
@@ -47,7 +47,7 @@ public class QuestionsController : ControllerBase
         }
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("question/{id}")]
     public async Task<ActionResult<QuestionDto>> GetQuestion(int id)
     {
         try
@@ -79,7 +79,7 @@ public class QuestionsController : ControllerBase
         }
     }
 
-    [HttpPost]
+    [HttpPost("create-question")]
     public async Task<ActionResult<QuestionDto>> CreateQuestion(CreateQuestionDto createQuestionDto)
     {
         try
@@ -124,7 +124,7 @@ public class QuestionsController : ControllerBase
         }
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("update-question/{id}")]
     public async Task<IActionResult> UpdateQuestion(int id, UpdateQuestionDto updateQuestionDto)
     {
         try
@@ -168,7 +168,7 @@ public class QuestionsController : ControllerBase
         }
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("delete-question/{id}")]
     public async Task<IActionResult> DeleteQuestion(int id)
     {
         try

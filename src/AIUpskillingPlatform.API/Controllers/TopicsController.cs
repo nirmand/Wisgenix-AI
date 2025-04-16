@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace AIUpskillingPlatform.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/content")]
 public class TopicsController : ControllerBase
 {
     private readonly ITopicRepository _topicRepository;
@@ -20,7 +20,7 @@ public class TopicsController : ControllerBase
         _logger = logger;
     }
 
-    [HttpGet]
+    [HttpGet("topics")]
     public async Task<ActionResult<IEnumerable<TopicDto>>> GetTopics()
     {
         try
@@ -38,7 +38,7 @@ public class TopicsController : ControllerBase
         }
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("get-topic/{id}")]
     public async Task<ActionResult<TopicDto>> GetTopic(int id)
     {
         try
@@ -61,7 +61,7 @@ public class TopicsController : ControllerBase
         }
     }
 
-    [HttpPost]
+    [HttpPost("create-topic")]
     public async Task<ActionResult<TopicDto>> CreateTopic(CreateTopicDto createTopicDto)
     {
         try
@@ -106,7 +106,7 @@ public class TopicsController : ControllerBase
         }
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("update-topic/{id}")]
     public async Task<IActionResult> UpdateTopic(int id, UpdateTopicDto updateTopicDto)
     {
         try
@@ -136,7 +136,7 @@ public class TopicsController : ControllerBase
         }
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("delete-topic/{id}")]
     public async Task<IActionResult> DeleteTopic(int id)
     {
         try

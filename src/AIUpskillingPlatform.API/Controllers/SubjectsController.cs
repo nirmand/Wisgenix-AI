@@ -10,7 +10,7 @@ using AIUpskillingPlatform.Data.Entities;
 namespace AIUpskillingPlatform.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/content")]
     public class SubjectsController : ControllerBase
     {
         private readonly ISubjectRepository _subjectRepository;
@@ -22,7 +22,7 @@ namespace AIUpskillingPlatform.API.Controllers
             _logger = logger;
         }
 
-        [HttpGet]
+        [HttpGet("get-subjects")]
         public async Task<ActionResult<IEnumerable<SubjectDto>>> GetSubjects()
         {
             try
@@ -47,7 +47,7 @@ namespace AIUpskillingPlatform.API.Controllers
             }
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("get-subject/{id}")]
         public async Task<ActionResult<SubjectDto>> GetSubject(int id)
         {
             try
@@ -77,7 +77,7 @@ namespace AIUpskillingPlatform.API.Controllers
             }
         }
 
-        [HttpPost]
+        [HttpPost("create-subject")]
         public async Task<ActionResult<SubjectDto>> CreateSubject(CreateSubjectDto createSubjectDto)
         {
             try
@@ -103,7 +103,7 @@ namespace AIUpskillingPlatform.API.Controllers
             }
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("update-subject/{id}")]
         public async Task<IActionResult> UpdateSubject(int id, UpdateSubjectDto updateSubjectDto)
         {
             try
@@ -126,7 +126,7 @@ namespace AIUpskillingPlatform.API.Controllers
             }
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("delete-subject/{id}")]
         public async Task<IActionResult> DeleteSubject(int id)
         {
             try

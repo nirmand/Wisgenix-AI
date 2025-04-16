@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace AIUpskillingPlatform.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/content")]
 public class QuestionOptionsController : ControllerBase
 {
     private readonly IQuestionOptionRepository _questionOptionRepository;
@@ -20,7 +20,7 @@ public class QuestionOptionsController : ControllerBase
         _logger = logger;
     }
 
-    [HttpGet]
+    [HttpGet("options")]
     public async Task<ActionResult<IEnumerable<QuestionOptionDto>>> GetQuestionOptions()
     {
         try
@@ -44,7 +44,7 @@ public class QuestionOptionsController : ControllerBase
         }
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("option/{id}")]
     public async Task<ActionResult<QuestionOptionDto>> GetQuestionOption(int id)
     {
         try
@@ -73,7 +73,7 @@ public class QuestionOptionsController : ControllerBase
         }
     }
 
-    [HttpGet("question/{questionId}")]
+    [HttpGet("options-for-question/{questionId}")]
     public async Task<ActionResult<IEnumerable<QuestionOptionDto>>> GetOptionsByQuestion(int questionId)
     {
         try
@@ -97,7 +97,7 @@ public class QuestionOptionsController : ControllerBase
         }
     }
 
-    [HttpPost]
+    [HttpPost("create-option")]
     public async Task<ActionResult<QuestionOptionDto>> CreateQuestionOption(CreateQuestionOptionDto createOptionDto)
     {
         try
@@ -137,7 +137,7 @@ public class QuestionOptionsController : ControllerBase
         }
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("update-option/{id}")]
     public async Task<IActionResult> UpdateQuestionOption(int id, UpdateQuestionOptionDto updateOptionDto)
     {
         try
@@ -175,7 +175,7 @@ public class QuestionOptionsController : ControllerBase
         }
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("delete-option/{id}")]
     public async Task<IActionResult> DeleteQuestionOption(int id)
     {
         try
