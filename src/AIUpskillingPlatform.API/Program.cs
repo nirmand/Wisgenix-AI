@@ -1,25 +1,63 @@
 using AIUpskillingPlatform.API;
+using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.Data;
 using AIUpskillingPlatform.Repositories;
 using AIUpskillingPlatform.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.AzureAppServices;
 using Microsoft.OpenApi.Models;
+using Serilog;
+using Serilog.Events;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Azure.Monitor.OpenTelemetry.Exporter;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Azure App Service logging
-builder.Logging.AddAzureWebAppDiagnostics();
-builder.Services.Configure<AzureFileLoggerOptions>(options =>
+// Configure SeriLog
+var logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .Enrich.FromLogContext();
+
+if (builder.Environment.IsDevelopment())
 {
-    options.FileName = "azure-diagnostics-";
-    options.FileSizeLimit = 50 * 1024;
-    options.RetainedFileCountLimit = 5;
-});
-builder.Services.Configure<AzureBlobLoggerOptions>(options =>
+    logger.WriteTo.Console().WriteTo.File(builder.Configuration["LocalLogs:LogFilePath"], rollingInterval: RollingInterval.Day);
+}
+else
 {
-    options.BlobName = "log.txt";
-});
+    logger.WriteTo.ApplicationInsights(builder.Configuration["ApplicationInsights:ConnectionString"], TelemetryConverter.Traces);
+}
+
+Log.Logger = logger.CreateLogger();
+builder.Host.UseSerilog();
+builder.Services.AddSingleton(Log.Logger);
+
+// Configure OpenTelemetry
+builder.Services.AddOpenTelemetry()
+.ConfigureResource(resource => resource.AddService(serviceName: "AIUpskillingPlatform.API"))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation());
+
+// For QA and Production, add Azure Monitor
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService(serviceName: "AIUpskillingPlatform.API"))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        // Add Azure Monitor Exporter if not in development
+        .AddAzureMonitorTraceExporter(options =>
+        {
+            options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+        }));
+}
+// Add Application Insights
+builder.Services.AddApplicationInsightsTelemetry();
+
+// Add Logger
+builder.Services.AddScoped<ILoggingService, SerilogLoggingService>();
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

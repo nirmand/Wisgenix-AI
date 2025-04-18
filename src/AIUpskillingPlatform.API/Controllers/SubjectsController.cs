@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using AIUpskillingPlatform.API.DTOs;
 using AIUpskillingPlatform.Repositories.Interfaces;
 using AIUpskillingPlatform.Data.Entities;
+using AIUpskillingPlatform.Core.Logger;
 namespace AIUpskillingPlatform.API.Controllers
 {
     [ApiController]
@@ -14,9 +15,9 @@ namespace AIUpskillingPlatform.API.Controllers
     public class SubjectsController : ControllerBase
     {
         private readonly ISubjectRepository _subjectRepository;
-        private readonly ILogger<SubjectsController> _logger;
+        private readonly ILoggingService _logger;
 
-        public SubjectsController(ISubjectRepository subjectRepository, ILogger<SubjectsController> logger)
+        public SubjectsController(ISubjectRepository subjectRepository, ILoggingService logger)
         {
             _subjectRepository = subjectRepository;
             _logger = logger;
@@ -27,6 +28,7 @@ namespace AIUpskillingPlatform.API.Controllers
         {
             try
             {
+                _logger.LogInformation("Getting all subjects");
                 var subjects = await _subjectRepository.GetAllAsync();
                 var subjectDtos = subjects.Select(s => new SubjectDto
                 {
@@ -38,6 +40,7 @@ namespace AIUpskillingPlatform.API.Controllers
                         TopicName = t.TopicName
                     }).ToList()
                 });
+                _logger.LogInformation("Successfully retrieved all subjects");
                 return Ok(subjectDtos);
             }
             catch (Exception ex)
@@ -52,6 +55,7 @@ namespace AIUpskillingPlatform.API.Controllers
         {
             try
             {
+                _logger.LogInformation("Getting subject {@id}", id);
                 var subject = await _subjectRepository.GetByIdAsync(id);
                 if (subject == null)
                 {
@@ -68,6 +72,7 @@ namespace AIUpskillingPlatform.API.Controllers
                         TopicName = t.TopicName
                     }).ToList()
                 };
+                _logger.LogInformation("Found subject with {@id}", id);
                 return Ok(subjectDto);
             }
             catch (Exception ex)

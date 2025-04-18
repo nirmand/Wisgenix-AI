@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AIUpskillingPlatform.API\AIUpskillingPlatform.API.csproj" />
     <ProjectReference Include="..\AIUpskillingPlatform.Common\AIUpskillingPlatform.Common.csproj" />
+    <ProjectReference Include="..\AIUpskillingPlatform.Core\AIUpskillingPlatform.Core.csproj" />
   </ItemGroup>
 
 </Project> 
