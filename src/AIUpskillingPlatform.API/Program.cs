@@ -21,7 +21,18 @@ var logger = new LoggerConfiguration()
 
 if (builder.Environment.IsDevelopment())
 {
-    logger.WriteTo.Console().WriteTo.File(builder.Configuration["LocalLogs:LogFilePath"], rollingInterval: RollingInterval.Day);
+    // Retrieve root folder path
+    var rootFolderPath = System.IO.Directory.GetParent(System.IO.Directory.GetParent(System.Environment.CurrentDirectory).ToString()).ToString(); 
+
+    var logPath = Path.Combine(rootFolderPath, builder.Configuration["LocalLogs:LogFilePath"]);
+    
+    // Ensure directory exists
+    Directory.CreateDirectory(Path.GetDirectoryName(logPath));
+    
+    logger.WriteTo.Console()
+          .WriteTo.File(logPath,
+          rollingInterval: RollingInterval.Day,
+          outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}");
 }
 else
 {
