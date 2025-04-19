@@ -2,8 +2,8 @@ using AIUpskillingPlatform.API.DTOs;
 using AIUpskillingPlatform.Common.Exceptions;
 using AIUpskillingPlatform.Data.Entities;
 using AIUpskillingPlatform.Repositories.Interfaces;
+using AIUpskillingPlatform.Core.Logger;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace AIUpskillingPlatform.API.Controllers;
 
@@ -12,9 +12,9 @@ namespace AIUpskillingPlatform.API.Controllers;
 public class QuestionOptionsController : ControllerBase
 {
     private readonly IQuestionOptionRepository _questionOptionRepository;
-    private readonly ILogger<QuestionOptionsController> _logger;
+    private readonly ILoggingService _logger;
 
-    public QuestionOptionsController(IQuestionOptionRepository questionOptionRepository, ILogger<QuestionOptionsController> logger)
+    public QuestionOptionsController(IQuestionOptionRepository questionOptionRepository, ILoggingService logger)
     {
         _questionOptionRepository = questionOptionRepository;
         _logger = logger;
@@ -34,7 +34,7 @@ public class QuestionOptionsController : ControllerBase
                 IsCorrect = o.IsCorrect,
                 QuestionID = o.QuestionID
             });
-            _logger.LogInformation("Successfully retrieved {Count} question options", options.Count());
+            _logger.LogInformation($"Successfully retrieved {options.Count()} question options");
             return Ok(optionDtos);
         }
         catch (Exception ex)
@@ -49,7 +49,7 @@ public class QuestionOptionsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Getting question option with ID: {Id}", id);
+            _logger.LogInformation($"Getting question option with ID: {id}");
             var option = await _questionOptionRepository.GetByIdAsync(id);
             var optionDto = new QuestionOptionDto
             {
@@ -58,17 +58,17 @@ public class QuestionOptionsController : ControllerBase
                 IsCorrect = option.IsCorrect,
                 QuestionID = option.QuestionID
             };
-            _logger.LogInformation("Successfully retrieved question option with ID: {Id}", id);
+            _logger.LogInformation($"Successfully retrieved question option with ID: {id}");
             return Ok(optionDto);
         }
         catch (QuestionOptionNotFoundException ex)
         {
-            _logger.LogWarning(ex, "Question option with ID: {Id} was not found", id);
+            _logger.LogError(ex, $"Question option with ID: {id} was not found");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while getting question option with ID: {Id}", id);
+            _logger.LogError(ex, $"Error occurred while getting question option with ID: {id}");
             return StatusCode(500, "An error occurred while retrieving the question option");
         }
     }
@@ -78,7 +78,7 @@ public class QuestionOptionsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Getting options for question ID: {QuestionId}", questionId);
+            _logger.LogInformation($"Getting options for question ID: {questionId}");
             var options = await _questionOptionRepository.GetByQuestionIdAsync(questionId);
             var optionDtos = options.Select(o => new QuestionOptionDto
             {
@@ -87,12 +87,12 @@ public class QuestionOptionsController : ControllerBase
                 IsCorrect = o.IsCorrect,
                 QuestionID = o.QuestionID
             });
-            _logger.LogInformation("Successfully retrieved {Count} options for question ID: {QuestionId}", options.Count(), questionId);
+            _logger.LogInformation($"Successfully retrieved {options.Count()} options for question ID: {questionId}");
             return Ok(optionDtos);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while getting options for question ID: {QuestionId}", questionId);
+            _logger.LogError(ex, $"Error occurred while getting options for question ID: {questionId}");
             return StatusCode(500, "An error occurred while retrieving question options");
         }
     }
@@ -102,12 +102,12 @@ public class QuestionOptionsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Creating new option for question ID: {QuestionId}", createOptionDto.QuestionID);
+            _logger.LogInformation($"Creating new option for question ID: {createOptionDto.QuestionID}");
             
             // Validate if question exists
             if (!await _questionOptionRepository.QuestionExistsAsync(createOptionDto.QuestionID))
             {
-                _logger.LogWarning("Question with ID: {QuestionId} does not exist", createOptionDto.QuestionID);
+                _logger.LogWarning($"Question with ID: {createOptionDto.QuestionID} does not exist");
                 return BadRequest($"Question with ID {createOptionDto.QuestionID} does not exist");
             }
 
@@ -127,12 +127,12 @@ public class QuestionOptionsController : ControllerBase
                 QuestionID = createdOption.QuestionID
             };
 
-            _logger.LogInformation("Successfully created option with ID: {Id}", createdOption.ID);
+            _logger.LogInformation($"Successfully created option with ID: {createdOption.ID}");
             return CreatedAtAction(nameof(GetQuestionOption), new { id = createdOption.ID }, optionDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while creating option for question ID: {QuestionId}", createOptionDto.QuestionID);
+            _logger.LogError(ex, $"Error occurred while creating option for question ID: {createOptionDto.QuestionID}");
             return StatusCode(500, "An error occurred while creating the question option");
         }
     }
@@ -142,12 +142,12 @@ public class QuestionOptionsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Updating question option with ID: {Id}", id);
+            _logger.LogInformation($"Updating question option with ID: {id}");
 
             // Validate if question exists
             if (!await _questionOptionRepository.QuestionExistsAsync(updateOptionDto.QuestionID))
             {
-                _logger.LogWarning("Question with ID: {QuestionId} does not exist", updateOptionDto.QuestionID);
+                _logger.LogWarning($"Question with ID: {updateOptionDto.QuestionID} does not exist");
                 return BadRequest($"Question with ID {updateOptionDto.QuestionID} does not exist");
             }
 
@@ -160,17 +160,17 @@ public class QuestionOptionsController : ControllerBase
             };
 
             await _questionOptionRepository.UpdateAsync(option);
-            _logger.LogInformation("Successfully updated question option with ID: {Id}", id);
+            _logger.LogInformation($"Successfully updated question option with ID: {id}");
             return NoContent();
         }
         catch (QuestionOptionNotFoundException ex)
         {
-            _logger.LogWarning(ex, "Question option with ID: {Id} was not found for update", id);
+            _logger.LogError(ex, $"Question option with ID: {id} was not found for update");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while updating question option with ID: {Id}", id);
+            _logger.LogError(ex, $"Error occurred while updating question option with ID: {id}");
             return StatusCode(500, "An error occurred while updating the question option");
         }
     }
@@ -180,20 +180,20 @@ public class QuestionOptionsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Deleting question option with ID: {Id}", id);
+            _logger.LogInformation($"Deleting question option with ID: {id}");
             await _questionOptionRepository.DeleteAsync(id);
-            _logger.LogInformation("Successfully deleted question option with ID: {Id}", id);
+            _logger.LogInformation($"Successfully deleted question option with ID: {id}");
             return NoContent();
         }
         catch (QuestionOptionNotFoundException ex)
         {
-            _logger.LogWarning(ex, "Question option with ID: {Id} was not found for deletion", id);
+            _logger.LogError(ex, $"Question option with ID: {id} was not found for deletion");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while deleting question option with ID: {Id}", id);
+            _logger.LogError(ex, $"Error occurred while deleting question option with ID: {id}");
             return StatusCode(500, "An error occurred while deleting the question option");
         }
     }
-} 
+}

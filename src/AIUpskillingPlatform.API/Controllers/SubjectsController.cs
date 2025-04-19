@@ -1,13 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using AIUpskillingPlatform.API.DTOs;
 using AIUpskillingPlatform.Repositories.Interfaces;
 using AIUpskillingPlatform.Data.Entities;
 using AIUpskillingPlatform.Core.Logger;
+
 namespace AIUpskillingPlatform.API.Controllers
 {
     [ApiController]
@@ -55,11 +51,11 @@ namespace AIUpskillingPlatform.API.Controllers
         {
             try
             {
-                _logger.LogInformation("Getting subject {@id}", id);
+                _logger.LogInformation($"Getting subject {id}");
                 var subject = await _subjectRepository.GetByIdAsync(id);
                 if (subject == null)
                 {
-                    return NotFound($"Subject with ID {id} was not found.");
+                    return NotFound($"Subject with ID {id} was not found");
                 }
 
                 var subjectDto = new SubjectDto
@@ -72,7 +68,7 @@ namespace AIUpskillingPlatform.API.Controllers
                         TopicName = t.TopicName
                     }).ToList()
                 };
-                _logger.LogInformation("Found subject with {@id}", id);
+                _logger.LogInformation($"Found subject with {id}");
                 return Ok(subjectDto);
             }
             catch (Exception ex)

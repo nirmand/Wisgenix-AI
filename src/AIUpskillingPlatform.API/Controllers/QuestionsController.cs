@@ -2,8 +2,8 @@ using AIUpskillingPlatform.API.DTOs;
 using AIUpskillingPlatform.Common.Exceptions;
 using AIUpskillingPlatform.Data.Entities;
 using AIUpskillingPlatform.Repositories.Interfaces;
+using AIUpskillingPlatform.Core.Logger;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace AIUpskillingPlatform.API.Controllers;
 
@@ -12,9 +12,9 @@ namespace AIUpskillingPlatform.API.Controllers;
 public class QuestionsController : ControllerBase
 {
     private readonly IQuestionRepository _questionRepository;
-    private readonly ILogger<QuestionsController> _logger;
+    private readonly ILoggingService _logger;
 
-    public QuestionsController(IQuestionRepository questionRepository, ILogger<QuestionsController> logger)
+    public QuestionsController(IQuestionRepository questionRepository, ILoggingService logger)
     {
         _questionRepository = questionRepository;
         _logger = logger;
@@ -37,7 +37,7 @@ public class QuestionsController : ControllerBase
                 GeneratedBy = q.GeneratedBy,
                 TopicName = q.Topic?.TopicName ?? string.Empty
             });
-            _logger.LogInformation("Successfully retrieved {Count} questions", questions.Count());
+            _logger.LogInformation($"Successfully retrieved {questions.Count()} questions");
             return Ok(questionDtos);
         }
         catch (Exception ex)
@@ -52,7 +52,7 @@ public class QuestionsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Getting question with ID: {Id}", id);
+            _logger.LogInformation($"Getting question with ID: {id}");
             var question = await _questionRepository.GetByIdAsync(id);
             var questionDto = new QuestionDto
             {
@@ -64,17 +64,17 @@ public class QuestionsController : ControllerBase
                 GeneratedBy = question.GeneratedBy,
                 TopicName = question.Topic?.TopicName ?? string.Empty
             };
-            _logger.LogInformation("Successfully retrieved question with ID: {Id}", id);
+            _logger.LogInformation($"Successfully retrieved question with ID: {id}");
             return Ok(questionDto);
         }
         catch (QuestionNotFoundException ex)
         {
-            _logger.LogWarning(ex, "Question with ID: {Id} was not found", id);
+            _logger.LogError(ex, $"Question with ID: {id} was not found");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while getting question with ID: {Id}", id);
+            _logger.LogError(ex, $"Error occurred while getting question with ID: {id}");
             return StatusCode(500, "An error occurred while retrieving the question");
         }
     }
@@ -84,12 +84,12 @@ public class QuestionsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Creating new question for topic ID: {TopicId}", createQuestionDto.TopicID);
+            _logger.LogInformation($"Creating new question for topic ID: {createQuestionDto.TopicID}");
             
             // Validate if topic exists
             if (!await _questionRepository.TopicExistsAsync(createQuestionDto.TopicID))
             {
-                _logger.LogWarning("Topic with ID: {TopicId} does not exist", createQuestionDto.TopicID);
+                _logger.LogError(new TopicNotFoundException(createQuestionDto.TopicID), $"Topic does not exist");
                 return BadRequest($"Topic with ID {createQuestionDto.TopicID} does not exist");
             }
 
@@ -114,12 +114,12 @@ public class QuestionsController : ControllerBase
                 GeneratedBy = createdQuestion.GeneratedBy
             };
 
-            _logger.LogInformation("Successfully created question with ID: {Id}", createdQuestion.ID);
+            _logger.LogInformation($"Successfully created question with ID: {createdQuestion.ID}");
             return CreatedAtAction(nameof(GetQuestion), new { id = createdQuestion.ID }, questionDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while creating question for topic ID: {TopicId}", createQuestionDto.TopicID);
+            _logger.LogError(ex, $"Error occurred while creating question for topic ID: {createQuestionDto.TopicID}");
             return StatusCode(500, "An error occurred while creating the question");
         }
     }
@@ -129,19 +129,19 @@ public class QuestionsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Updating question with ID: {Id}", id);
+            _logger.LogInformation($"Updating question with ID: {id}");
 
             // Validate if topic exists
             if (!await _questionRepository.TopicExistsAsync(updateQuestionDto.TopicID))
             {
-                _logger.LogWarning("Topic with ID: {TopicId} does not exist", updateQuestionDto.TopicID);
+                _logger.LogError(new TopicNotFoundException(updateQuestionDto.TopicID), $"Topic with ID: {updateQuestionDto.TopicID} does not exist");
                 return BadRequest($"Topic with ID {updateQuestionDto.TopicID} does not exist");
             }
 
             var question = await _questionRepository.GetByIdAsync(id);
             if (question == null)
             {
-                _logger.LogWarning("Question with ID: {Id} was not found for update", id);
+                _logger.LogError(new QuestionNotFoundException(id), $"Question with ID: {id} was not found for update");
                 return NotFound($"Question with ID {id} was not found.");
             }
 
@@ -153,17 +153,17 @@ public class QuestionsController : ControllerBase
             question.QuestionSourceReference = updateQuestionDto.QuestionSourceReference;
 
             await _questionRepository.UpdateAsync(question);
-            _logger.LogInformation("Successfully updated question with ID: {Id}", id);
+            _logger.LogInformation($"Successfully updated question with ID: {id}");
             return NoContent();
         }
         catch (QuestionNotFoundException ex)
         {
-            _logger.LogWarning(ex, "Question with ID: {Id} was not found for update", id);
+            _logger.LogError(ex, $"Question with ID: {id} was not found for update");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while updating question with ID: {Id}", id);
+            _logger.LogError(ex, $"Error occurred while updating question with ID: {id}");
             return StatusCode(500, "An error occurred while updating the question");
         }
     }
@@ -173,19 +173,19 @@ public class QuestionsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Deleting question with ID: {Id}", id);
+            _logger.LogInformation($"Deleting question with ID: {id}");
             await _questionRepository.DeleteAsync(id);
-            _logger.LogInformation("Successfully deleted question with ID: {Id}", id);
+            _logger.LogInformation($"Successfully deleted question with ID: {id}");
             return NoContent();
         }
         catch (QuestionNotFoundException ex)
         {
-            _logger.LogWarning(ex, "Question with ID: {Id} was not found for deletion", id);
+            _logger.LogError(ex, $"Question with ID: {id} was not found for deletion");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while deleting question with ID: {Id}", id);
+            _logger.LogError(ex, $"Error occurred while deleting question with ID: {id}");
             return StatusCode(500, "An error occurred while deleting the question");
         }
     }
