@@ -3,63 +3,63 @@ using AIUpskillingPlatform.Data;
 using AIUpskillingPlatform.Data.Entities;
 using AIUpskillingPlatform.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
+using AIUpskillingPlatform.Core.Logger;
 
 namespace AIUpskillingPlatform.Repositories;
 
 public class TopicRepository : ITopicRepository
 {
     private readonly AppDbContext _context;
-    private readonly ILogger<TopicRepository> _logger;
+    private readonly ILoggingService _logger;
 
-    public TopicRepository(AppDbContext context, ILogger<TopicRepository> logger)
+    public TopicRepository(AppDbContext context, ILoggingService logger)
     {
         _context = context;
         _logger = logger;
     }
 
-    public async Task<IEnumerable<Topic>> GetAllAsync()
+    public async Task<IEnumerable<Topic>> GetAllAsync(LogContext logContext)
     {
         try
         {
-            _logger.LogInformation("Retrieving all topics");
+            _logger.LogOperationStart<Topic>(logContext, "Retrieving all topics");
             var topics = await _context.Topics.ToListAsync();
-            _logger.LogInformation("Successfully retrieved {Count} topics", topics.Count);
+            _logger.LogOperationSuccess<Topic>(logContext, $"Successfully retrieved {topics.Count} topics");
             return topics;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while retrieving all topics");
+            _logger.LogOperationError<Topic>(logContext, ex, "Error occurred while retrieving all topics");
             throw;
         }
     }
 
-    public async Task<Topic?> GetByIdAsync(int id)
+    public async Task<Topic?> GetByIdAsync(LogContext logContext, int id)
     {
         try
         {
-            _logger.LogInformation("Retrieving topic with ID: {Id}", id);
+            _logger.LogOperationStart<Topic>(logContext, $"Retrieving topic with ID: {id}");
             var topic = await _context.Topics.FindAsync(id);
             if (topic == null)
             {
-                _logger.LogWarning("Topic with ID: {Id} was not found", id);
                 throw new TopicNotFoundException(id);
             }
-            _logger.LogInformation("Successfully retrieved topic with ID: {Id}", id);
+            _logger.LogOperationSuccess<Topic>(logContext, $"Successfully retrieved topic with ID: {id}");
             return topic;
         }
-        catch (TopicNotFoundException)
+        catch (TopicNotFoundException ex)
         {
+            _logger.LogOperationError<Topic>(logContext, ex, $"Topic with ID: {id} not found");
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while retrieving topic with ID: {Id}", id);
+            _logger.LogOperationError<Topic>(logContext, ex, $"Failed to retrieve topic {id}");
             throw;
         }
     }
 
-    public async Task<Topic> CreateAsync(Topic topic)
+    public async Task<Topic> CreateAsync(LogContext logContext, Topic topic)
     {
         try
         {
@@ -76,7 +76,7 @@ public class TopicRepository : ITopicRepository
         }
     }
 
-    public async Task<Topic> UpdateAsync(Topic topic)
+    public async Task<Topic> UpdateAsync(LogContext logContext, Topic topic)
     {
         try
         {
@@ -104,7 +104,7 @@ public class TopicRepository : ITopicRepository
         }
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task DeleteAsync(LogContext logContext, int id)
     {
         try
         {
@@ -131,7 +131,7 @@ public class TopicRepository : ITopicRepository
         }
     }
 
-    public async Task<bool> SubjectExistsAsync(int subjectId)
+    public async Task<bool> SubjectExistsAsync(LogContext logContext, int subjectId)
     {
         try
         {

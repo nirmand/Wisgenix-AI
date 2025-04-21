@@ -3,6 +3,7 @@ using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.Data;
 using AIUpskillingPlatform.Repositories;
 using AIUpskillingPlatform.Repositories.Interfaces;
+using AIUpskillingPlatform.API.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -10,6 +11,9 @@ using Serilog.Events;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Azure.Monitor.OpenTelemetry.Exporter;
+using FluentValidation.AspNetCore;
+using FluentValidation;
+using AIUpskillingPlatform.DTO.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,27 +47,26 @@ Log.Logger = logger.CreateLogger();
 builder.Host.UseSerilog();
 builder.Services.AddSingleton(Log.Logger);
 
-// Configure OpenTelemetry
+// Configure OpenTelemetry once with conditional configuration
 builder.Services.AddOpenTelemetry()
-.ConfigureResource(resource => resource.AddService(serviceName: "AIUpskillingPlatform.API"))
-    .WithTracing(tracing => tracing
-        .AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation());
+    .ConfigureResource(resource => 
+        resource.AddService(serviceName: "AIUpskillingPlatform.API"))
+    .WithTracing(tracing => 
+    {
+        tracing.AddAspNetCoreInstrumentation()
+              .AddHttpClientInstrumentation();
 
-// For QA and Production, add Azure Monitor
-if (!builder.Environment.IsDevelopment())
-{
-    builder.Services.AddOpenTelemetry()
-    .ConfigureResource(resource => resource.AddService(serviceName: "AIUpskillingPlatform.API"))
-    .WithTracing(tracing => tracing
-        .AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation()
-        // Add Azure Monitor Exporter if not in development
-        .AddAzureMonitorTraceExporter(options =>
+        // Add Azure Monitor only for non-development environments
+        if (!builder.Environment.IsDevelopment())
         {
-            options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
-        }));
-}
+            tracing.AddAzureMonitorTraceExporter(options =>
+            {
+                options.ConnectionString = 
+                    builder.Configuration["ApplicationInsights:ConnectionString"];
+            });
+        }
+    });
+
 // Add Application Insights
 builder.Services.AddApplicationInsightsTelemetry();
 
@@ -91,8 +94,6 @@ builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 builder.Services.AddScoped<IQuestionOptionRepository, QuestionOptionRepository>();
 builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
 
-// Add Controllers
-builder.Services.AddControllers();
 
 if (builder.Configuration.GetValue<int>("DatabaseType") == (int)DatabaseType.Sqlite)
 {
@@ -104,6 +105,13 @@ else
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("AzureSQL")));
 }
+
+builder.Services.AddControllers();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateTopicDtoValidator>();
+builder.Services.AddFluentValidationAutoValidation(options =>
+{
+    options.DisableDataAnnotationsValidation = true;
+});
 
 var app = builder.Build();
 
@@ -123,16 +131,13 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "AIUpsklilling Platform V1");
         c.RoutePrefix = string.Empty;// Serve the Swagger UI at the app's root
     });
-
-    app.MapOpenApi();
 }
 
 
 app.UseHttpsRedirection();
-
-// Add routing
 app.UseRouting();
 app.UseAuthorization();
+app.UseValidationLogging();
 app.MapControllers();
 
 app.Run();

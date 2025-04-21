@@ -3,6 +3,7 @@ using AIUpskillingPlatform.API.DTOs;
 using AIUpskillingPlatform.Common.Exceptions;
 using AIUpskillingPlatform.Data.Entities;
 using AIUpskillingPlatform.Repositories.Interfaces;
+using AIUpskillingPlatform.Core.Logger;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -13,13 +14,13 @@ namespace AIUpskillingPlatform.Tests.Controllers;
 public class QuestionOptionsControllerTests
 {
     private readonly Mock<IQuestionOptionRepository> _mockRepository;
-    private readonly Mock<ILogger<QuestionOptionsController>> _mockLogger;
+    private readonly Mock<ILoggingService> _mockLogger;
     private readonly QuestionOptionsController _controller;
 
     public QuestionOptionsControllerTests()
     {
         _mockRepository = new Mock<IQuestionOptionRepository>();
-        _mockLogger = new Mock<ILogger<QuestionOptionsController>>();
+        _mockLogger = new Mock<ILoggingService>();
         _controller = new QuestionOptionsController(_mockRepository.Object, _mockLogger.Object);
     }
 

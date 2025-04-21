@@ -3,6 +3,7 @@ using AIUpskillingPlatform.API.DTOs;
 using AIUpskillingPlatform.Repositories.Interfaces;
 using AIUpskillingPlatform.Data.Entities;
 using AIUpskillingPlatform.Core.Logger;
+using AIUpskillingPlatform.DTO;
 
 namespace AIUpskillingPlatform.API.Controllers
 {

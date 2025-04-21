@@ -4,6 +4,7 @@ using AIUpskillingPlatform.Common.Exceptions;
 using AIUpskillingPlatform.Data.Entities;
 using AIUpskillingPlatform.Repositories.Interfaces;
 using AIUpskillingPlatform.Common;
+using AIUpskillingPlatform.Core.Logger;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -14,13 +15,13 @@ namespace AIUpskillingPlatform.Tests.Controllers;
 public class QuestionsControllerTests
 {
     private readonly Mock<IQuestionRepository> _mockRepository;
-    private readonly Mock<ILogger<QuestionsController>> _mockLogger;
+    private readonly Mock<ILoggingService> _mockLogger;
     private readonly QuestionsController _controller;
 
     public QuestionsControllerTests()
     {
         _mockRepository = new Mock<IQuestionRepository>();
-        _mockLogger = new Mock<ILogger<QuestionsController>>();
+        _mockLogger = new Mock<ILoggingService>();
         _controller = new QuestionsController(_mockRepository.Object, _mockLogger.Object);
     }
 

@@ -4,6 +4,9 @@ using AIUpskillingPlatform.Data.Entities;
 using AIUpskillingPlatform.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using AIUpskillingPlatform.Core.Logger;
+using AIUpskillingPlatform.DTO;
+using System.Net;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace AIUpskillingPlatform.API.Controllers;
 
@@ -23,61 +26,70 @@ public class TopicsController : ControllerBase
     [HttpGet("topics")]
     public async Task<ActionResult<IEnumerable<TopicDto>>> GetTopics()
     {
+        LogContext logContext = LogContext.Create("GetTopics");
         try
         {
-            _logger.LogInformation("Getting all topics");
-            var topics = await _topicRepository.GetAllAsync();
-            var topicDtos = topics.Select(t => new TopicDto { ID = t.ID, TopicName = t.TopicName, SubjectID = t.SubjectID });  
-            _logger.LogInformation($"Successfully retrieved {topics.Count()} topics");
+            var topics = await _topicRepository.GetAllAsync(logContext);
+            var topicDtos = topics.Select(t => new TopicDto { ID = t.ID, TopicName = t.TopicName, SubjectID = t.SubjectID });
             return Ok(topicDtos);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while getting all topics");
+            _logger.LogOperationError<Topic>(logContext, ex, "Unhandled error getting all topics");
             return StatusCode(500, "An error occurred while retrieving topics");
         }
-    }
+    }    
 
     [HttpGet("get-topic/{id}")]
     public async Task<ActionResult<TopicDto>> GetTopic(int id)
     {
+        LogContext logContext = LogContext.Create("GetTopic");
         try
         {
-            _logger.LogInformation($"Getting topic with ID: {id}");
-            var topic = await _topicRepository.GetByIdAsync(id);
+            var topic = await _topicRepository.GetByIdAsync(logContext, id);
             var topicDto = new TopicDto { ID = topic.ID, TopicName = topic.TopicName, SubjectID = topic.SubjectID };
-            _logger.LogInformation($"Successfully retrieved topic with ID: {id}");
             return Ok(topicDto);
         }
         catch (TopicNotFoundException ex)
         {
-            _logger.LogWarning($"Topic with ID: {id} was not found");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error occurred while getting topic with ID: {id}");
-            return StatusCode(500, "An error occurred while retrieving the topic");
+            _logger.LogOperationError<Topic>(logContext, ex, $"Unhandled error getting topic {id}");
+            return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred while retrieving the topic");
         }
     }
 
     [HttpPost("create-topic")]
     public async Task<ActionResult<TopicDto>> CreateTopic(CreateTopicDto createTopicDto)
     {
+        LogContext logContext = LogContext.Create("CreateTopic");
         try
         {
-            if (createTopicDto.SubjectID <= 0)
+            if (!ModelState.IsValid)
             {
-                return BadRequest("Subject ID is required");
-            }
+                var errors = new List<string>();
+                foreach (var state in ModelState)
+                {
+                    if (state.Value?.Errors != null)
+                    {
+                        foreach (var error in state.Value.Errors)
+                        {
+                            errors.Add(error.ErrorMessage);
+                        }
+                    }
+                }
 
-            if (String.IsNullOrWhiteSpace(createTopicDto.TopicName))
-            {
-                return BadRequest("Topic name is required");
-            }
+                foreach (var error in errors)
+                {
+                    _logger.LogOperationWarning(logContext, "Validation Error: {Error}", error);
+                }
 
+                return BadRequest(ModelState);
+            }
             // Check if subject exists
-            if (!await _topicRepository.SubjectExistsAsync(createTopicDto.SubjectID))
+            if (!await _topicRepository.SubjectExistsAsync(logContext, createTopicDto.SubjectID))
             {
                 return BadRequest($"Subject with ID {createTopicDto.SubjectID} does not exist");
             }
@@ -88,7 +100,7 @@ public class TopicsController : ControllerBase
                 SubjectID = createTopicDto.SubjectID
             };
 
-            var createdTopic = await _topicRepository.CreateAsync(topic);
+            var createdTopic = await _topicRepository.CreateAsync(logContext, topic);
             
             var topicDto = new TopicDto
             {
@@ -109,15 +121,16 @@ public class TopicsController : ControllerBase
     [HttpPut("update-topic/{id}")]
     public async Task<IActionResult> UpdateTopic(int id, UpdateTopicDto updateTopicDto)
     {
+        LogContext logContext = LogContext.Create("UpdateTopic");
         try
         {
             // Check if subject exists
-            if (!await _topicRepository.SubjectExistsAsync(updateTopicDto.SubjectID))
+            if (!await _topicRepository.SubjectExistsAsync(logContext, updateTopicDto.SubjectID))
             {
                 return BadRequest($"Subject with ID {updateTopicDto.SubjectID} does not exist");
             }
 
-            var topic = await _topicRepository.GetByIdAsync(id);
+            var topic = await _topicRepository.GetByIdAsync(logContext, id);
             if (topic == null)
             {
                 return NotFound($"Topic with ID {id} was not found");
@@ -126,7 +139,7 @@ public class TopicsController : ControllerBase
             topic.TopicName = updateTopicDto.TopicName;
             topic.SubjectID = updateTopicDto.SubjectID;
 
-            await _topicRepository.UpdateAsync(topic);
+            await _topicRepository.UpdateAsync(logContext, topic);
             return NoContent();
         }
         catch (Exception ex)
@@ -139,10 +152,11 @@ public class TopicsController : ControllerBase
     [HttpDelete("delete-topic/{id}")]
     public async Task<IActionResult> DeleteTopic(int id)
     {
+        LogContext logContext = LogContext.Create("UpdateTopic");
         try
         {
             _logger.LogInformation("Deleting topic with ID: {Id}", id);
-            await _topicRepository.DeleteAsync(id);
+            await _topicRepository.DeleteAsync(logContext, id);
             _logger.LogInformation("Successfully deleted topic with ID: {Id}", id);
             return NoContent();
         }
@@ -157,4 +171,4 @@ public class TopicsController : ControllerBase
             return StatusCode(500, "An error occurred while deleting the topic");
         }
     }
-} 
+}
