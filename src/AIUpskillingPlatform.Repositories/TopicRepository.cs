@@ -63,15 +63,15 @@ public class TopicRepository : ITopicRepository
     {
         try
         {
-            _logger.LogInformation("Creating new topic with name: {TopicName}", topic.TopicName);
+            _logger.LogOperationStart<Topic>(logContext, $"Creating new topic with name: {topic.TopicName}");
             _context.Topics.Add(topic);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully created topic with ID: {Id}", topic.ID);
+            _logger.LogOperationSuccess<Topic>(logContext, $"Successfully created topic with ID: {topic.ID}");
             return topic;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while creating topic with name: {TopicName}", topic.TopicName);
+            _logger.LogOperationError<Topic>(logContext, ex, $"Error occurred while creating topic with name: {topic.TopicName}");
             throw;
         }
     }

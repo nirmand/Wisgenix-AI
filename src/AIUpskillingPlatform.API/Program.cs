@@ -107,13 +107,9 @@ else
 }
 
 builder.Services.AddValidatorsFromAssemblyContaining<CreateTopicDtoValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UpdateTopicDtoValidator>();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddControllers();
-
-// builder.Services.AddFluentValidationAutoValidation(options =>
-// {
-//     options.DisableDataAnnotationsValidation = true;
-// });
 
 var app = builder.Build();
 
