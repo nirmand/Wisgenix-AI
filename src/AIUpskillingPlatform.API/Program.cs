@@ -106,12 +106,14 @@ else
         options.UseSqlServer(builder.Configuration.GetConnectionString("AzureSQL")));
 }
 
-builder.Services.AddControllers();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateTopicDtoValidator>();
-builder.Services.AddFluentValidationAutoValidation(options =>
-{
-    options.DisableDataAnnotationsValidation = true;
-});
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddControllers();
+
+// builder.Services.AddFluentValidationAutoValidation(options =>
+// {
+//     options.DisableDataAnnotationsValidation = true;
+// });
 
 var app = builder.Build();
 
@@ -133,11 +135,10 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-
 app.UseHttpsRedirection();
 app.UseRouting();
+app.UseMiddleware<ValidationLoggingMiddleware>();
 app.UseAuthorization();
-app.UseValidationLogging();
 app.MapControllers();
 
 app.Run();

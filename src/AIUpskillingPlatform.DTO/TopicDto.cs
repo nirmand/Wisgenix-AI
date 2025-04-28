@@ -4,7 +4,7 @@ namespace AIUpskillingPlatform.DTO;
 
 public abstract class WriteTopicBaseDto
 {
-    public string TopicName { get; set; } = string.Empty;
+    public string TopicName { get; set; }
 
     public int SubjectID { get; set; }   
 }

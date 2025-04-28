@@ -1,12 +1,13 @@
 using AIUpskillingPlatform.Core.Logger;
-using FluentValidation.Results;
+using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace AIUpskillingPlatform.API.Middleware
 {
     public class ValidationLoggingMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly ILoggingService _logger;
 
         public ValidationLoggingMiddleware(RequestDelegate next)
         {
@@ -16,26 +17,64 @@ namespace AIUpskillingPlatform.API.Middleware
         public async Task InvokeAsync(HttpContext context, ILoggingService logger)
         {
             var logContext = LogContext.Create("ValidationMiddleware");
+            var originalBodyStream = context.Response.Body;
 
-            if (!context.Items.ContainsKey("ValidationErrors") || 
-                context.Items["ValidationErrors"] is not IEnumerable<ValidationFailure> errors) 
+            using var memoryStream = new MemoryStream();
+            context.Response.Body = memoryStream;
+
+            try
             {
                 await _next(context);
-                return;
-            }
 
-            foreach (var error in errors)
+                if (context.Response.StatusCode == StatusCodes.Status400BadRequest)
+                {
+                    memoryStream.Seek(0, SeekOrigin.Begin);
+                    using var streamReader = new StreamReader(memoryStream, leaveOpen: true);
+                    var responseBody = await streamReader.ReadToEndAsync();
+
+                    if (!string.IsNullOrEmpty(responseBody))
+                    {
+                        try
+                        {
+                            var validationProblem = JsonSerializer.Deserialize<ValidationProblemDetails>(responseBody);
+                            if (validationProblem?.Errors != null)
+                            {
+                                foreach (var error in validationProblem.Errors)
+                                {
+                                    logger.LogOperationWarning<ValidationLog>(
+                                        logContext,
+                                        $"Validation failed for {error.Key}: {string.Join(", ", error.Value)}"
+                                    );
+                                }
+                            }
+                        }
+                        catch (JsonException ex)
+                        {
+                            logger.LogOperationError<ValidationLog>(
+                                logContext,
+                                ex,
+                                "Failed to parse validation response"
+                            );
+                        }
+                    }
+                }
+
+                memoryStream.Seek(0, SeekOrigin.Begin);
+                await memoryStream.CopyToAsync(originalBodyStream);
+            }
+            finally
             {
-                _logger.LogOperationWarning(
-                    logContext,
-                    "Validation failed for property {Property}: {Error}",
-                    error.PropertyName,
-                    error.ErrorMessage
-                );
+                context.Response.Body = originalBodyStream;
             }
-
-            await _next(context);
         }
     }
 
+    public static class ValidationLoggingMiddlewareExtensions
+    {
+        public static IApplicationBuilder UseValidationLogging(
+            this IApplicationBuilder builder)
+        {
+            return builder.UseMiddleware<ValidationLoggingMiddleware>();
+        }
+    }
 }

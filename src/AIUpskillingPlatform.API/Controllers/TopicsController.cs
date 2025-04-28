@@ -5,6 +5,7 @@ using AIUpskillingPlatform.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.DTO;
+using AIUpskillingPlatform.DTO.Validators;
 using System.Net;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
@@ -62,36 +63,16 @@ public class TopicsController : ControllerBase
     }
 
     [HttpPost("create-topic")]
-    public async Task<ActionResult<TopicDto>> CreateTopic(CreateTopicDto createTopicDto)
+    public async Task<ActionResult<TopicDto>> CreateTopic([FromBody] CreateTopicDto createTopicDto)
     {
         LogContext logContext = LogContext.Create("CreateTopic");
         try
-        {
-            if (!ModelState.IsValid)
-            {
-                var errors = new List<string>();
-                foreach (var state in ModelState)
-                {
-                    if (state.Value?.Errors != null)
-                    {
-                        foreach (var error in state.Value.Errors)
-                        {
-                            errors.Add(error.ErrorMessage);
-                        }
-                    }
-                }
-
-                foreach (var error in errors)
-                {
-                    _logger.LogOperationWarning(logContext, "Validation Error: {Error}", error);
-                }
-
-                return BadRequest(ModelState);
-            }
+        {            
             // Check if subject exists
             if (!await _topicRepository.SubjectExistsAsync(logContext, createTopicDto.SubjectID))
             {
-                return BadRequest($"Subject with ID {createTopicDto.SubjectID} does not exist");
+                _logger.LogOperationWarning<Topic>(logContext, "Subject with ID {SubjectID} does not exist",createTopicDto.SubjectID);
+                return BadRequest(ModelState);
             }
 
             var topic = new Topic

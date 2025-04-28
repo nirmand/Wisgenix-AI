@@ -11,6 +11,7 @@ public class TopicDtoWriteValidator<T>: AbstractValidator<WriteTopicBaseDto>
     public TopicDtoWriteValidator()
     {
         RuleFor(x => x.TopicName)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .WithMessage("Topic name is required")
             .MaximumLength(100)
@@ -19,6 +20,7 @@ public class TopicDtoWriteValidator<T>: AbstractValidator<WriteTopicBaseDto>
             .WithMessage("Topic name contains invalid characters");
 
         RuleFor(x => x.SubjectID)
+            .Cascade(CascadeMode.Stop)
             .GreaterThan(0)
             .WithMessage("Subject ID must be greater than 0");
     }
@@ -31,9 +33,36 @@ public class TopicDtoWriteValidator<T>: AbstractValidator<WriteTopicBaseDto>
     }
 }
 
-public class CreateTopicDtoValidator : AbstractValidator<CreateTopicDto>
+// public class CreateTopicDtoValidator : AbstractValidator<CreateTopicDto>
+// {
+//     public CreateTopicDtoValidator():base()
+//     {
+//     }
+// }
+
+public class CreateTopicDtoValidator: AbstractValidator<CreateTopicDto>
 {
-    public CreateTopicDtoValidator(): base()
+    public CreateTopicDtoValidator()
     {
+        RuleFor(x => x.TopicName)
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty()
+            .WithMessage("Topic name is required")
+            .MaximumLength(100)
+            .WithMessage("Topic name must not exceed 100 characters")
+            .Must(BeValidTopicName)
+            .WithMessage("Topic name contains invalid characters");
+
+        RuleFor(x => x.SubjectID)
+            .Cascade(CascadeMode.Stop)
+            .GreaterThan(0)
+            .WithMessage("Subject ID must be greater than 0");
+    }
+
+    private bool BeValidTopicName(string topicName)
+    {
+        // Add your custom validation logic here
+        return !string.IsNullOrWhiteSpace(topicName) && 
+               topicName.All(c => char.IsLetterOrDigit(c) || char.IsWhiteSpace(c));
     }
 }

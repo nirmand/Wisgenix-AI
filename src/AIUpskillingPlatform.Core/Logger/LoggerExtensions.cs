@@ -22,7 +22,7 @@ public static class LoggerExtensions
             context.CorrelationId, context.Operation, string.Format(message, args));
     }
 
-    public static void LogOperationWarning(this ILoggingService logger, LogContext context, string message, params object[] args)
+    public static void LogOperationWarning<T>(this ILoggingService logger, LogContext context, string message, params object[] args)
     {
         logger.LogWarning("[{CorrelationId}] Warning in {Operation}: {Message}",
         context.CorrelationId, context.Operation, string.Format(message, args));
