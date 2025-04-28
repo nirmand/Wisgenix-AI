@@ -7,140 +7,93 @@ using AIUpskillingPlatform.Core.Logger;
 
 namespace AIUpskillingPlatform.Repositories;
 
-public class TopicRepository : ITopicRepository
+public class TopicRepository : BaseRepository<Topic>, ITopicRepository
 {
-    private readonly AppDbContext _context;
-    private readonly ILoggingService _logger;
-
-    public TopicRepository(AppDbContext context, ILoggingService logger)
+    public TopicRepository(AppDbContext context, ILoggingService logger): base(context, logger)
     {
-        _context = context;
-        _logger = logger;
     }
 
     public async Task<IEnumerable<Topic>> GetAllAsync(LogContext logContext)
     {
-        try
-        {
-            _logger.LogOperationStart<Topic>(logContext, "Retrieving all topics");
-            var topics = await _context.Topics.ToListAsync();
-            _logger.LogOperationSuccess<Topic>(logContext, $"Successfully retrieved {topics.Count} topics");
-            return topics;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogOperationError<Topic>(logContext, ex, "Error occurred while retrieving all topics");
-            throw;
-        }
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            "Retrieving all topics",
+            async () => await Context.Topics.ToListAsync(),
+            results => $"Successfully retrieved {results.Count()} topics");
     }
 
     public async Task<Topic?> GetByIdAsync(LogContext logContext, int id)
     {
-        try
-        {
-            _logger.LogOperationStart<Topic>(logContext, $"Retrieving topic with ID: {id}");
-            var topic = await _context.Topics.FindAsync(id);
-            if (topic == null)
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Retrieving topic with ID: {id}",
+            async () =>
             {
-                throw new TopicNotFoundException(id);
-            }
-            _logger.LogOperationSuccess<Topic>(logContext, $"Successfully retrieved topic with ID: {id}");
-            return topic;
-        }
-        catch (TopicNotFoundException ex)
-        {
-            _logger.LogOperationError<Topic>(logContext, ex, $"Topic with ID: {id} not found");
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogOperationError<Topic>(logContext, ex, $"Failed to retrieve topic {id}");
-            throw;
-        }
+                var topic = await Context.Topics.FindAsync(id);
+                if (topic == null)
+                {
+                    throw new TopicNotFoundException(id);
+                }
+                return topic;
+            },
+            topic => $"Successfully retrieved topic with ID: {topic.ID}");
     }
 
     public async Task<Topic> CreateAsync(LogContext logContext, Topic topic)
     {
-        try
-        {
-            _logger.LogOperationStart<Topic>(logContext, $"Creating new topic with name: {topic.TopicName}");
-            _context.Topics.Add(topic);
-            await _context.SaveChangesAsync();
-            _logger.LogOperationSuccess<Topic>(logContext, $"Successfully created topic with ID: {topic.ID}");
-            return topic;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogOperationError<Topic>(logContext, ex, $"Error occurred while creating topic with name: {topic.TopicName}");
-            throw;
-        }
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Creating new topic",
+            async () =>
+            {
+                Context.Topics.Add(topic);
+                await Context.SaveChangesAsync();
+                return topic;
+            },
+            result => $"Successfully created topic with ID: {result.ID}");
     }
 
     public async Task<Topic> UpdateAsync(LogContext logContext, Topic topic)
     {
-        try
-        {
-            _logger.LogInformation("Updating topic with ID: {Id}", topic.ID);
-            var existingTopic = await _context.Topics.FindAsync(topic.ID);
-            if (existingTopic == null)
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Updating topic with ID: {topic.ID}",
+            async () =>
             {
-                _logger.LogWarning("Topic with ID: {Id} was not found for update", topic.ID);
-                throw new TopicNotFoundException(topic.ID);
-            }
-
-            _context.Entry(existingTopic).CurrentValues.SetValues(topic);
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully updated topic with ID: {Id}", topic.ID);
-            return existingTopic;
-        }
-        catch (TopicNotFoundException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while updating topic with ID: {Id}", topic.ID);
-            throw;
-        }
+                var existingTopic = await Context.Topics.FindAsync(topic.ID);
+                if (existingTopic == null)
+                {
+                    throw new TopicNotFoundException(topic.ID);
+                }
+                Context.Entry(existingTopic).CurrentValues.SetValues(topic);
+                await Context.SaveChangesAsync();
+                return existingTopic;
+            },
+            result => $"Successfully updated topic with ID: {result.ID}");
     }
 
     public async Task DeleteAsync(LogContext logContext, int id)
     {
-        try
-        {
-            _logger.LogInformation("Deleting topic with ID: {Id}", id);
-            var topic = await _context.Topics.FindAsync(id);
-            if (topic == null)
+        await ExecuteWithLoggingAsync(
+            logContext,
+            $"Deleting topic with ID: {id}",
+            async () =>
             {
-                _logger.LogWarning("Topic with ID: {Id} was not found for deletion", id);
-                throw new TopicNotFoundException(id);
-            }
-
-            _context.Topics.Remove(topic);
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully deleted topic with ID: {Id}", id);
-        }
-        catch (TopicNotFoundException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while deleting topic with ID: {Id}", id);
-            throw;
-        }
+                var topic = await Context.Topics.FindAsync(id);
+                if (topic == null)
+                {
+                    throw new TopicNotFoundException(id);
+                }
+                Context.Topics.Remove(topic);
+                await Context.SaveChangesAsync();
+            });
     }
 
     public async Task<bool> SubjectExistsAsync(LogContext logContext, int subjectId)
     {
-        try
-        {
-            return await _context.Subjects.AnyAsync(s => s.ID == subjectId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while checking if subject exists with ID: {Id}", subjectId);
-            throw;
-        }
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Checking if subject exists with ID: {subjectId}",
+            async () => await Context.Subjects.AnyAsync(s => s.ID == subjectId));
     }
 } 

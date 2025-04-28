@@ -130,7 +130,7 @@ public class TopicsController : ControllerBase
     [HttpDelete("delete-topic/{id}")]
     public async Task<IActionResult> DeleteTopic(int id)
     {
-        LogContext logContext = LogContext.Create("UpdateTopic");
+        LogContext logContext = LogContext.Create("DeleteTopic");
         try
         {
             _logger.LogInformation("Deleting topic with ID: {Id}", id);
