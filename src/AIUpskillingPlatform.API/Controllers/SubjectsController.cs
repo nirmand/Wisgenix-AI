@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.Mvc;
 using AIUpskillingPlatform.API.DTOs;
-using AIUpskillingPlatform.Repositories.Interfaces;
-using AIUpskillingPlatform.Data.Entities;
 using AIUpskillingPlatform.Core.Logger;
+using AIUpskillingPlatform.Data.Entities;
 using AIUpskillingPlatform.DTO;
+using AIUpskillingPlatform.Repositories.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AIUpskillingPlatform.API.Controllers
 {
@@ -149,4 +149,4 @@ namespace AIUpskillingPlatform.API.Controllers
             }
         }
     }
-} 
+}

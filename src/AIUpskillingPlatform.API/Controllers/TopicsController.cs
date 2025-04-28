@@ -1,13 +1,10 @@
-using AIUpskillingPlatform.API.DTOs;
+using System.Net;
 using AIUpskillingPlatform.Common.Exceptions;
+using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.Data.Entities;
+using AIUpskillingPlatform.DTO;
 using AIUpskillingPlatform.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using AIUpskillingPlatform.Core.Logger;
-using AIUpskillingPlatform.DTO;
-using AIUpskillingPlatform.DTO.Validators;
-using System.Net;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace AIUpskillingPlatform.API.Controllers;
 
@@ -39,7 +36,7 @@ public class TopicsController : ControllerBase
             _logger.LogOperationError<Topic>(logContext, ex, "Unhandled error getting all topics");
             return StatusCode(500, "An error occurred while retrieving topics");
         }
-    }    
+    }
 
     [HttpGet("get-topic/{id}")]
     public async Task<ActionResult<TopicDto>> GetTopic(int id)
@@ -67,11 +64,11 @@ public class TopicsController : ControllerBase
     {
         LogContext logContext = LogContext.Create("CreateTopic");
         try
-        {            
+        {
             // Check if subject exists
             if (!await _topicRepository.SubjectExistsAsync(logContext, createTopicDto.SubjectID))
             {
-                _logger.LogOperationWarning<Topic>(logContext, "Subject with ID {SubjectID} does not exist",createTopicDto.SubjectID);
+                _logger.LogOperationWarning<Topic>(logContext, "Subject with ID {SubjectID} does not exist", createTopicDto.SubjectID);
                 return BadRequest(ModelState);
             }
 
@@ -82,7 +79,7 @@ public class TopicsController : ControllerBase
             };
 
             var createdTopic = await _topicRepository.CreateAsync(logContext, topic);
-            
+
             var topicDto = new TopicDto
             {
                 ID = createdTopic.ID,

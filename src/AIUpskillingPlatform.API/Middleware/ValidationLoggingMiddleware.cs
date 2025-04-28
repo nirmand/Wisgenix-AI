@@ -1,7 +1,6 @@
-using AIUpskillingPlatform.Core.Logger;
-using FluentValidation;
-using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using AIUpskillingPlatform.Core.Logger;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AIUpskillingPlatform.API.Middleware
 {

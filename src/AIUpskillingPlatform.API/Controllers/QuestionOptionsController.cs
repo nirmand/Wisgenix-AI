@@ -1,8 +1,8 @@
 using AIUpskillingPlatform.API.DTOs;
 using AIUpskillingPlatform.Common.Exceptions;
+using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.Data.Entities;
 using AIUpskillingPlatform.Repositories.Interfaces;
-using AIUpskillingPlatform.Core.Logger;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AIUpskillingPlatform.API.Controllers;
@@ -103,7 +103,7 @@ public class QuestionOptionsController : ControllerBase
         try
         {
             _logger.LogInformation($"Creating new option for question ID: {createOptionDto.QuestionID}");
-            
+
             // Validate if question exists
             if (!await _questionOptionRepository.QuestionExistsAsync(createOptionDto.QuestionID))
             {

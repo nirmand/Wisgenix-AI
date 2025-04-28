@@ -1,19 +1,15 @@
 using AIUpskillingPlatform.API;
+using AIUpskillingPlatform.API.Extensions;
+using AIUpskillingPlatform.API.Middleware;
 using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.Data;
-using AIUpskillingPlatform.Repositories;
-using AIUpskillingPlatform.Repositories.Interfaces;
-using AIUpskillingPlatform.API.Middleware;
+using Azure.Monitor.OpenTelemetry.Exporter;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using Serilog;
-using Serilog.Events;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using Azure.Monitor.OpenTelemetry.Exporter;
-using FluentValidation.AspNetCore;
-using FluentValidation;
-using AIUpskillingPlatform.DTO.Validators;
+using Serilog;
+using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,13 +22,13 @@ var logger = new LoggerConfiguration()
 if (builder.Environment.IsDevelopment())
 {
     // Retrieve root folder path
-    var rootFolderPath = System.IO.Directory.GetParent(System.IO.Directory.GetParent(System.Environment.CurrentDirectory).ToString()).ToString(); 
+    var rootFolderPath = System.IO.Directory.GetParent(System.IO.Directory.GetParent(System.Environment.CurrentDirectory).ToString()).ToString();
 
     var logPath = Path.Combine(rootFolderPath, builder.Configuration["LocalLogs:LogFilePath"]);
-    
+
     // Ensure directory exists
     Directory.CreateDirectory(Path.GetDirectoryName(logPath));
-    
+
     logger.WriteTo.Console()
           .WriteTo.File(logPath,
           rollingInterval: RollingInterval.Day,
@@ -49,9 +45,9 @@ builder.Services.AddSingleton(Log.Logger);
 
 // Configure OpenTelemetry once with conditional configuration
 builder.Services.AddOpenTelemetry()
-    .ConfigureResource(resource => 
+    .ConfigureResource(resource =>
         resource.AddService(serviceName: "AIUpskillingPlatform.API"))
-    .WithTracing(tracing => 
+    .WithTracing(tracing =>
     {
         tracing.AddAspNetCoreInstrumentation()
               .AddHttpClientInstrumentation();
@@ -61,7 +57,7 @@ builder.Services.AddOpenTelemetry()
         {
             tracing.AddAzureMonitorTraceExporter(options =>
             {
-                options.ConnectionString = 
+                options.ConnectionString =
                     builder.Configuration["ApplicationInsights:ConnectionString"];
             });
         }
@@ -88,13 +84,6 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Add Repository
-builder.Services.AddScoped<ITopicRepository, TopicRepository>();
-builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
-builder.Services.AddScoped<IQuestionOptionRepository, QuestionOptionRepository>();
-builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
-
-
 if (builder.Configuration.GetValue<int>("DatabaseType") == (int)DatabaseType.Sqlite)
 {
     builder.Services.AddDbContext<AppDbContext>(options =>
@@ -106,9 +95,8 @@ else
         options.UseSqlServer(builder.Configuration.GetConnectionString("AzureSQL")));
 }
 
-builder.Services.AddValidatorsFromAssemblyContaining<CreateTopicDtoValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<UpdateTopicDtoValidator>();
-builder.Services.AddFluentValidationAutoValidation();
+builder.Services.InjectRepositories();
+builder.Services.RegisterDTOValidators();
 builder.Services.AddControllers();
 
 var app = builder.Build();

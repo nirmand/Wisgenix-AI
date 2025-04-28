@@ -1,8 +1,8 @@
 using AIUpskillingPlatform.API.DTOs;
 using AIUpskillingPlatform.Common.Exceptions;
+using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.Data.Entities;
 using AIUpskillingPlatform.Repositories.Interfaces;
-using AIUpskillingPlatform.Core.Logger;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AIUpskillingPlatform.API.Controllers;
@@ -85,7 +85,7 @@ public class QuestionsController : ControllerBase
         try
         {
             _logger.LogInformation($"Creating new question for topic ID: {createQuestionDto.TopicID}");
-            
+
             // Validate if topic exists
             if (!await _questionRepository.TopicExistsAsync(createQuestionDto.TopicID))
             {
@@ -189,4 +189,4 @@ public class QuestionsController : ControllerBase
             return StatusCode(500, "An error occurred while deleting the question");
         }
     }
-} 
+}
