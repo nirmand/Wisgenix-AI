@@ -9,4 +9,6 @@ public interface ISubjectRepository
     Task<Subject> CreateAsync(LogContext logContext,Subject subject);
     Task<Subject> UpdateAsync(LogContext logContext,Subject subject);
     Task DeleteAsync(LogContext logContext,int id);
+    Task<bool> CheckIfExists(LogContext logContext,int id);
+
 } 

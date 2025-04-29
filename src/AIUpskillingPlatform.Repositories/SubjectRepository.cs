@@ -85,5 +85,13 @@ namespace AIUpskillingPlatform.Repositories
                 await Context.SaveChangesAsync();
             });
         }
+
+        public async Task<bool> CheckIfExists(LogContext logContext,int id)
+        {
+            return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Checking if subject exists with ID: {id}",
+            async () => await Context.Subjects.AnyAsync(s => s.ID == id));
+        }
     }
 }

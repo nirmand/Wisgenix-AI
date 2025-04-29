@@ -8,6 +8,8 @@ public static class RegisterDTOValidatorsExtensions
 {
     public static IServiceCollection RegisterDTOValidators(this IServiceCollection services)
     {
+        services.AddValidatorsFromAssemblyContaining<CreateSubjectDtoValidator>();
+        services.AddValidatorsFromAssemblyContaining<UpdateSubjectDtoValidator>();
         services.AddValidatorsFromAssemblyContaining<CreateTopicDtoValidator>();
         services.AddValidatorsFromAssemblyContaining<UpdateTopicDtoValidator>();
         services.AddFluentValidationAutoValidation();

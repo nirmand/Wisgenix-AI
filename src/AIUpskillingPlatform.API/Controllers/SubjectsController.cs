@@ -1,7 +1,6 @@
-using AIUpskillingPlatform.API.DTOs;
+using AIUpskillingPlatform.DTO;
 using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.Data.Entities;
-using AIUpskillingPlatform.DTO;
 using AIUpskillingPlatform.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 

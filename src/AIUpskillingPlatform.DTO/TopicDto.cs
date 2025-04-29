@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace AIUpskillingPlatform.DTO;
 
 public abstract class WriteTopicBaseDto

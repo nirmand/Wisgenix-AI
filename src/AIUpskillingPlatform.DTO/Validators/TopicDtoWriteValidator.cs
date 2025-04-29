@@ -1,8 +1,4 @@
-using System;
-using System.Linq;
 using FluentValidation;
-using AIUpskillingPlatform.Core.Logger;
-using AIUpskillingPlatform.DTO;
 
 namespace AIUpskillingPlatform.DTO.Validators;
 

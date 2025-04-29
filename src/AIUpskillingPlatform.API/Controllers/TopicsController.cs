@@ -1,4 +1,5 @@
 using System.Net;
+using AutoMapper;
 using AIUpskillingPlatform.Common.Exceptions;
 using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.Data.Entities;
@@ -13,12 +14,16 @@ namespace AIUpskillingPlatform.API.Controllers;
 public class TopicsController : ControllerBase
 {
     private readonly ITopicRepository _topicRepository;
+    private readonly ISubjectRepository _subjectRepository;
     private readonly ILoggingService _logger;
+    private readonly IMapper _mapper;
 
-    public TopicsController(ITopicRepository topicRepository, ILoggingService logger)
+    public TopicsController(ITopicRepository topicRepository, ISubjectRepository subjectRepository, ILoggingService logger, IMapper mapper)
     {
         _topicRepository = topicRepository;
+        _subjectRepository = subjectRepository;
         _logger = logger;
+        _mapper = mapper;
     }
 
     [HttpGet("topics")]
@@ -28,7 +33,7 @@ public class TopicsController : ControllerBase
         try
         {
             var topics = await _topicRepository.GetAllAsync(logContext);
-            var topicDtos = topics.Select(t => new TopicDto { ID = t.ID, TopicName = t.TopicName, SubjectID = t.SubjectID });
+            var topicDtos = _mapper.Map<IEnumerable<TopicDto>>(topics);
             return Ok(topicDtos);
         }
         catch (Exception ex)
@@ -45,7 +50,7 @@ public class TopicsController : ControllerBase
         try
         {
             var topic = await _topicRepository.GetByIdAsync(logContext, id);
-            var topicDto = new TopicDto { ID = topic.ID, TopicName = topic.TopicName, SubjectID = topic.SubjectID };
+            var topicDto = _mapper.Map<TopicDto>(topic);
             return Ok(topicDto);
         }
         catch (TopicNotFoundException ex)
@@ -65,27 +70,15 @@ public class TopicsController : ControllerBase
         LogContext logContext = LogContext.Create("CreateTopic");
         try
         {
-            // Check if subject exists
-            if (!await _topicRepository.SubjectExistsAsync(logContext, createTopicDto.SubjectID))
+            if (!await _subjectRepository.CheckIfExists(logContext, createTopicDto.SubjectID))
             {
                 _logger.LogOperationWarning<Topic>(logContext, "Subject with ID {SubjectID} does not exist", createTopicDto.SubjectID);
-                return BadRequest(ModelState);
+                return BadRequest($"Subject with ID {createTopicDto.SubjectID} does not exist");
             }
 
-            var topic = new Topic
-            {
-                TopicName = createTopicDto.TopicName,
-                SubjectID = createTopicDto.SubjectID
-            };
-
+            var topic = _mapper.Map<Topic>(createTopicDto);
             var createdTopic = await _topicRepository.CreateAsync(logContext, topic);
-
-            var topicDto = new TopicDto
-            {
-                ID = createdTopic.ID,
-                TopicName = createdTopic.TopicName,
-                SubjectID = createdTopic.SubjectID
-            };
+            var topicDto = _mapper.Map<TopicDto>(createdTopic);
 
             return CreatedAtAction(nameof(GetTopic), new { id = createdTopic.ID }, topicDto);
         }
@@ -102,23 +95,24 @@ public class TopicsController : ControllerBase
         LogContext logContext = LogContext.Create("UpdateTopic");
         try
         {
-            // Check if subject exists
-            if (!await _topicRepository.SubjectExistsAsync(logContext, updateTopicDto.SubjectID))
+            if (!await _subjectRepository.CheckIfExists(logContext, updateTopicDto.SubjectID))
             {
                 return BadRequest($"Subject with ID {updateTopicDto.SubjectID} does not exist");
             }
 
-            var topic = await _topicRepository.GetByIdAsync(logContext, id);
-            if (topic == null)
+            var existingTopic = await _topicRepository.GetByIdAsync(logContext, id);
+            if (existingTopic == null)
             {
-                return NotFound($"Topic with ID {id} was not found");
+                return NotFound($"Topic with ID {id} was not found.");
             }
 
-            topic.TopicName = updateTopicDto.TopicName;
-            topic.SubjectID = updateTopicDto.SubjectID;
-
-            await _topicRepository.UpdateAsync(logContext, topic);
+            _mapper.Map(updateTopicDto, existingTopic);
+            await _topicRepository.UpdateAsync(logContext, existingTopic);
             return NoContent();
+        }
+        catch (TopicNotFoundException ex)
+        {
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {

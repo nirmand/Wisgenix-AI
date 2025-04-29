@@ -1,12 +1,12 @@
+using AutoMapper;
 using AIUpskillingPlatform.API.Controllers;
-using AIUpskillingPlatform.API.DTOs;
 using AIUpskillingPlatform.Data.Entities;
 using AIUpskillingPlatform.Repositories.Interfaces;
 using AIUpskillingPlatform.Core.Logger;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using AIUpskillingPlatform.DTO;
 
 namespace AIUpskillingPlatform.Tests.Controllers;
 
@@ -16,6 +16,7 @@ public class SubjectsControllerTests
     private readonly Mock<ILoggingService> _mockLogger;
     private readonly SubjectsController _controller;
     private readonly LogContext _logContext;
+    private readonly Mock<IMapper> _mapper;
 
     public SubjectsControllerTests()
     {

@@ -9,22 +9,26 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using AIUpskillingPlatform.Core.Logger;
+using AutoMapper;
 
 namespace AIUpskillingPlatform.Tests.Controllers;
 
 public class TopicsControllerTests
 {
     private readonly Mock<ITopicRepository> _mockRepository;
+    private readonly Mock<ISubjectRepository> _mockSubjectReposiory;
     private readonly Mock<ILoggingService> _mockLogger;
     private readonly TopicsController _controller;
-
+    private readonly Mock<IMapper> _mapper;
     private readonly LogContext _logContext;
 
     public TopicsControllerTests()
     {
-        _mockRepository = new Mock<ITopicRepository>();
+        _mockRepository = new Mock<ITopicRepository>();        
         _mockLogger = new Mock<ILoggingService>();
-        _controller = new TopicsController(_mockRepository.Object, _mockLogger.Object);
+        _mockSubjectReposiory = new Mock<ISubjectRepository>();
+        _mapper = new Mock<IMapper>(); 
+        _controller = new TopicsController(_mockRepository.Object, _mockSubjectReposiory.Object, _mockLogger.Object, _mapper.Object);
         _logContext = LogContext.Create("TestContext");
     }
 

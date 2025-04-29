@@ -3,6 +3,7 @@ using AIUpskillingPlatform.API.Extensions;
 using AIUpskillingPlatform.API.Middleware;
 using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.Data;
+using AIUpskillingPlatform.DTO.Mappings;
 using Azure.Monitor.OpenTelemetry.Exporter;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -97,6 +98,10 @@ else
 
 builder.Services.InjectRepositories();
 builder.Services.RegisterDTOValidators();
+
+// Register AutoMapper
+builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(TopicMappingProfile).Assembly));
+
 builder.Services.AddControllers();
 
 var app = builder.Build();
