@@ -23,10 +23,11 @@ namespace AIUpskillingPlatform.API.Controllers
         [HttpGet("get-subjects")]
         public async Task<ActionResult<IEnumerable<SubjectDto>>> GetSubjects()
         {
+            LogContext logContext = LogContext.Create("GetSubjects");
             try
             {
                 _logger.LogInformation("Getting all subjects");
-                var subjects = await _subjectRepository.GetAllAsync();
+                var subjects = await _subjectRepository.GetAllAsync(logContext);
                 var subjectDtos = subjects.Select(s => new SubjectDto
                 {
                     ID = s.ID,
@@ -50,10 +51,11 @@ namespace AIUpskillingPlatform.API.Controllers
         [HttpGet("get-subject/{id}")]
         public async Task<ActionResult<SubjectDto>> GetSubject(int id)
         {
+            LogContext logContext = LogContext.Create("GetSubject");
             try
             {
                 _logger.LogInformation($"Getting subject {id}");
-                var subject = await _subjectRepository.GetByIdAsync(id);
+                var subject = await _subjectRepository.GetByIdAsync(logContext,id);
                 if (subject == null)
                 {
                     return NotFound($"Subject with ID {id} was not found");
@@ -82,6 +84,7 @@ namespace AIUpskillingPlatform.API.Controllers
         [HttpPost("create-subject")]
         public async Task<ActionResult<SubjectDto>> CreateSubject(CreateSubjectDto createSubjectDto)
         {
+            LogContext logContext = LogContext.Create("CreateSubject");
             try
             {
                 var subject = new Subject
@@ -89,7 +92,7 @@ namespace AIUpskillingPlatform.API.Controllers
                     SubjectName = createSubjectDto.SubjectName
                 };
 
-                var createdSubject = await _subjectRepository.CreateAsync(subject);
+                var createdSubject = await _subjectRepository.CreateAsync(logContext,subject);
                 var subjectDto = new SubjectDto
                 {
                     ID = createdSubject.ID,
@@ -108,16 +111,17 @@ namespace AIUpskillingPlatform.API.Controllers
         [HttpPut("update-subject/{id}")]
         public async Task<IActionResult> UpdateSubject(int id, UpdateSubjectDto updateSubjectDto)
         {
+            LogContext logContext = LogContext.Create("UpdateSubject");
             try
             {
-                var subject = await _subjectRepository.GetByIdAsync(id);
+                var subject = await _subjectRepository.GetByIdAsync(logContext,id);
                 if (subject == null)
                 {
                     return NotFound($"Subject with ID {id} was not found.");
                 }
 
                 subject.SubjectName = updateSubjectDto.SubjectName;
-                await _subjectRepository.UpdateAsync(subject);
+                await _subjectRepository.UpdateAsync(logContext,subject);
 
                 return NoContent();
             }
@@ -131,15 +135,16 @@ namespace AIUpskillingPlatform.API.Controllers
         [HttpDelete("delete-subject/{id}")]
         public async Task<IActionResult> DeleteSubject(int id)
         {
+            LogContext logContext = LogContext.Create("DeleteSubject");
             try
             {
-                var subject = await _subjectRepository.GetByIdAsync(id);
+                var subject = await _subjectRepository.GetByIdAsync(logContext,id);
                 if (subject == null)
                 {
                     return NotFound($"Subject with ID {id} was not found.");
                 }
 
-                await _subjectRepository.DeleteAsync(id);
+                await _subjectRepository.DeleteAsync(logContext,id);
                 return NoContent();
             }
             catch (Exception ex)

@@ -1,15 +1,16 @@
 using AIUpskillingPlatform.Common.Exceptions;
+using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.Data;
 using AIUpskillingPlatform.Data.Entities;
+using AIUpskillingPlatform.Repositories.Base;
 using AIUpskillingPlatform.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using AIUpskillingPlatform.Core.Logger;
 
 namespace AIUpskillingPlatform.Repositories;
 
 public class TopicRepository : BaseRepository<Topic>, ITopicRepository
 {
-    public TopicRepository(AppDbContext context, ILoggingService logger): base(context, logger)
+    public TopicRepository(AppDbContext context, ILoggingService logger) : base(context, logger)
     {
     }
 
@@ -29,11 +30,7 @@ public class TopicRepository : BaseRepository<Topic>, ITopicRepository
             $"Retrieving topic with ID: {id}",
             async () =>
             {
-                var topic = await Context.Topics.FindAsync(id);
-                if (topic == null)
-                {
-                    throw new TopicNotFoundException(id);
-                }
+                var topic = await Context.Topics.FindAsync(id) ?? throw new TopicNotFoundException(id);
                 return topic;
             },
             topic => $"Successfully retrieved topic with ID: {topic.ID}");
@@ -96,4 +93,4 @@ public class TopicRepository : BaseRepository<Topic>, ITopicRepository
             $"Checking if subject exists with ID: {subjectId}",
             async () => await Context.Subjects.AnyAsync(s => s.ID == subjectId));
     }
-} 
+}

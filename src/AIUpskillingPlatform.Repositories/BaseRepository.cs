@@ -1,7 +1,7 @@
 using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.Data;
 
-namespace AIUpskillingPlatform.Repositories;
+namespace AIUpskillingPlatform.Repositories.Base;
 
 public abstract class BaseRepository<TEntity> where TEntity : class
 {

@@ -1,12 +1,12 @@
+using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.Data.Entities;
 
 namespace AIUpskillingPlatform.Repositories.Interfaces;
 public interface ISubjectRepository
 {
-    Task<IEnumerable<Subject>> GetAllAsync();
-    Task<Subject?> GetByIdAsync(int id);
-    Task<Subject> CreateAsync(Subject subject);
-    Task<Subject> UpdateAsync(Subject subject);
-    Task DeleteAsync(int id);
-    Task<bool> ExistsAsync(int id);
+    Task<IEnumerable<Subject>> GetAllAsync(LogContext logContext);
+    Task<Subject?> GetByIdAsync(LogContext logContext,int id);
+    Task<Subject> CreateAsync(LogContext logContext,Subject subject);
+    Task<Subject> UpdateAsync(LogContext logContext,Subject subject);
+    Task DeleteAsync(LogContext logContext,int id);
 } 

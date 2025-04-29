@@ -15,12 +15,14 @@ public class SubjectsControllerTests
     private readonly Mock<ISubjectRepository> _mockRepository;
     private readonly Mock<ILoggingService> _mockLogger;
     private readonly SubjectsController _controller;
+    private readonly LogContext _logContext;
 
     public SubjectsControllerTests()
     {
         _mockRepository = new Mock<ISubjectRepository>();
         _mockLogger = new Mock<ILoggingService>();
         _controller = new SubjectsController(_mockRepository.Object, _mockLogger.Object);
+        _logContext = LogContext.Create("TestContext");
     }
 
     [Fact]
@@ -32,7 +34,7 @@ public class SubjectsControllerTests
             new Subject { ID = 1, SubjectName = "C#", Topics = new List<Topic>() },
             new Subject { ID = 2, SubjectName = "Java", Topics = new List<Topic>() }
         };
-        _mockRepository.Setup(repo => repo.GetAllAsync()).ReturnsAsync(subjects);
+        _mockRepository.Setup(repo => repo.GetAllAsync(_logContext)).ReturnsAsync(subjects);
 
         // Act
         var result = await _controller.GetSubjects();
@@ -48,7 +50,7 @@ public class SubjectsControllerTests
     {
         // Arrange
         var subject = new Subject { ID = 1, SubjectName = "C#", Topics = new List<Topic>() };
-        _mockRepository.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(subject);
+        _mockRepository.Setup(repo => repo.GetByIdAsync(_logContext,1)).ReturnsAsync(subject);
 
         // Act
         var result = await _controller.GetSubject(1);
@@ -63,7 +65,7 @@ public class SubjectsControllerTests
     public async Task GetSubject_WithInvalidId_ReturnsNotFound()
     {
         // Arrange
-        _mockRepository.Setup(repo => repo.GetByIdAsync(999)).ReturnsAsync((Subject?)null);
+        _mockRepository.Setup(repo => repo.GetByIdAsync(_logContext,999)).ReturnsAsync((Subject?)null);
 
         // Act
         var result = await _controller.GetSubject(999);
@@ -78,7 +80,7 @@ public class SubjectsControllerTests
         // Arrange
         var createDto = new CreateSubjectDto { SubjectName = "C#" };
         var createdSubject = new Subject { ID = 1, SubjectName = "C#" };
-        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<Subject>())).ReturnsAsync(createdSubject);
+        _mockRepository.Setup(repo => repo.CreateAsync(_logContext,It.IsAny<Subject>())).ReturnsAsync(createdSubject);
 
         // Act
         var result = await _controller.CreateSubject(createDto);
@@ -95,14 +97,14 @@ public class SubjectsControllerTests
         // Arrange
         var updateDto = new UpdateSubjectDto { SubjectName = "Updated C#" };
         var existingSubject = new Subject { ID = 1, SubjectName = "C#" };
-        _mockRepository.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(existingSubject);
+        _mockRepository.Setup(repo => repo.GetByIdAsync(_logContext,1)).ReturnsAsync(existingSubject);
 
         // Act
         var result = await _controller.UpdateSubject(1, updateDto);
 
         // Assert
         Assert.IsType<NoContentResult>(result);
-        _mockRepository.Verify(repo => repo.UpdateAsync(It.IsAny<Subject>()), Times.Once);
+        _mockRepository.Verify(repo => repo.UpdateAsync(_logContext,It.IsAny<Subject>()), Times.Once);
     }
 
     [Fact]
@@ -110,13 +112,13 @@ public class SubjectsControllerTests
     {
         // Arrange
         var subject = new Subject { ID = 1, SubjectName = "C#" };
-        _mockRepository.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(subject);
+        _mockRepository.Setup(repo => repo.GetByIdAsync(_logContext,1)).ReturnsAsync(subject);
 
         // Act
         var result = await _controller.DeleteSubject(1);
 
         // Assert
         Assert.IsType<NoContentResult>(result);
-        _mockRepository.Verify(repo => repo.DeleteAsync(1), Times.Once);
+        _mockRepository.Verify(repo => repo.DeleteAsync(_logContext,1), Times.Once);
     }
 } 

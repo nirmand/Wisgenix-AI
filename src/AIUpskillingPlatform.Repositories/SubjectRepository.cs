@@ -1,104 +1,89 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using AIUpskillingPlatform.Data.Entities;
-using AIUpskillingPlatform.Repositories.Interfaces;
+using AIUpskillingPlatform.Common.Exceptions;
+using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.Data;
+using AIUpskillingPlatform.Data.Entities;
+using AIUpskillingPlatform.Repositories.Base;
+using AIUpskillingPlatform.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace AIUpskillingPlatform.Repositories
 {
-    public class SubjectRepository : ISubjectRepository
+    public class SubjectRepository : BaseRepository<Subject>, ISubjectRepository
     {
-        private readonly AppDbContext _context;
-        private readonly ILogger<SubjectRepository> _logger;
-
-        public SubjectRepository(AppDbContext context, ILogger<SubjectRepository> logger)
+        public SubjectRepository(AppDbContext context, ILoggingService logger) : base(context, logger)
         {
-            _context = context;
-            _logger = logger;
         }
 
-        public async Task<IEnumerable<Subject>> GetAllAsync()
+        public async Task<IEnumerable<Subject>> GetAllAsync(LogContext logContext)
         {
-            try
-            {
-                return await _context.Subjects.Include(s => s.Topics).ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while retrieving all subjects");
-                throw;
-            }
+            return await ExecuteWithLoggingAsync(
+                logContext,
+                "Retrieving all subjects",
+                async () => await Context.Subjects.Include(s => s.Topics).ToListAsync(),
+                results => $"Successfully retrieved {results.Count} subjects");
         }
 
-        public async Task<Subject?> GetByIdAsync(int id)
+        public async Task<Subject?> GetByIdAsync(LogContext logContext, int id)
         {
-            try
-            {
-                return await _context.Subjects
-                    .Include(s => s.Topics)
-                    .FirstOrDefaultAsync(s => s.ID == id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while retrieving subject with ID: {Id}", id);
-                throw;
-            }
-        }
-
-        public async Task<Subject> CreateAsync(Subject subject)
-        {
-            try
-            {
-                _context.Subjects.Add(subject);
-                await _context.SaveChangesAsync();
-                return subject;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while creating subject");
-                throw;
-            }
-        }
-
-        public async Task<Subject> UpdateAsync(Subject subject)
-        {
-            try
-            {
-                _context.Entry(subject).State = EntityState.Modified;
-                await _context.SaveChangesAsync();
-                return subject;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while updating subject with ID: {Id}", subject.ID);
-                throw;
-            }
-        }
-
-        public async Task DeleteAsync(int id)
-        {
-            try
-            {
-                var subject = await _context.Subjects.FindAsync(id);
-                if (subject != null)
+            return await ExecuteWithLoggingAsync(
+                logContext,
+                $"Retrieving subject with ID: {id}",
+                async () =>
                 {
-                    _context.Subjects.Remove(subject);
-                    await _context.SaveChangesAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while deleting subject with ID: {Id}", id);
-                throw;
-            }
+                    var subject = await Context.Subjects.Include(s => s.Topics).FirstOrDefaultAsync(s => s.ID == id) ?? throw new SubjectNotFoundException(id);
+                    return subject;
+                },
+                subject => $"Successfully retrieved subject with ID: {subject.ID}");
         }
 
-        public async Task<bool> ExistsAsync(int id)
+        public async Task<Subject> CreateAsync(LogContext logContext, Subject subject)
         {
-            return await _context.Subjects.AnyAsync(s => s.ID == id);
+            return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Creating new subject",
+            async () =>
+            {
+                Context.Subjects.Add(subject);
+                await Context.SaveChangesAsync();
+                return subject;
+            },
+            result => $"Successfully created subject with ID: {result.ID}");
+        }
+
+        public async Task<Subject> UpdateAsync(LogContext logContext, Subject subject)
+        {
+            return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Updating subject with ID: {subject.ID}",
+            async () =>
+            {
+                var existingSubject = await Context.Subjects.FindAsync(subject.ID);
+                if (existingSubject == null)
+                {
+                    throw new SubjectNotFoundException(subject.ID);
+                }
+                Context.Entry(existingSubject).CurrentValues.SetValues(subject);
+                await Context.SaveChangesAsync();
+                return existingSubject;
+            },
+            result => $"Successfully updated subject with ID: {result.ID}");
+        }
+
+        public async Task DeleteAsync(LogContext logContext, int id)
+        {
+            await ExecuteWithLoggingAsync(
+            logContext,
+            $"Deleting topic with ID: {id}",
+            async () =>
+            {
+                var subject = await Context.Subjects.FindAsync(id);
+                if (subject == null)
+                {
+                    throw new SubjectNotFoundException(id);
+                }
+                Context.Subjects.Remove(subject);
+                await Context.SaveChangesAsync();
+            });
         }
     }
-} 
+}
