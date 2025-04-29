@@ -22,7 +22,8 @@ public class SubjectsControllerTests
     {
         _mockRepository = new Mock<ISubjectRepository>();
         _mockLogger = new Mock<ILoggingService>();
-        _controller = new SubjectsController(_mockRepository.Object, _mockLogger.Object);
+        _mapper = new Mock<IMapper>();
+        _controller = new SubjectsController(_mockRepository.Object, _mockLogger.Object, _mapper.Object);
         _logContext = LogContext.Create("TestContext");
     }
 

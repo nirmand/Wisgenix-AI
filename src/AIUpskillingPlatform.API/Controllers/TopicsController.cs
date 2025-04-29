@@ -70,7 +70,7 @@ public class TopicsController : ControllerBase
         LogContext logContext = LogContext.Create("CreateTopic");
         try
         {
-            if (!await _subjectRepository.CheckIfExists(logContext, createTopicDto.SubjectID))
+            if (!await _subjectRepository.SubjectExistsAsync(logContext, createTopicDto.SubjectID))
             {
                 _logger.LogOperationWarning<Topic>(logContext, "Subject with ID {SubjectID} does not exist", createTopicDto.SubjectID);
                 return BadRequest($"Subject with ID {createTopicDto.SubjectID} does not exist");
@@ -95,7 +95,7 @@ public class TopicsController : ControllerBase
         LogContext logContext = LogContext.Create("UpdateTopic");
         try
         {
-            if (!await _subjectRepository.CheckIfExists(logContext, updateTopicDto.SubjectID))
+            if (!await _subjectRepository.SubjectExistsAsync(logContext, updateTopicDto.SubjectID))
             {
                 return BadRequest($"Subject with ID {updateTopicDto.SubjectID} does not exist");
             }

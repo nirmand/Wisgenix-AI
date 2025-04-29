@@ -20,7 +20,7 @@ namespace AIUpskillingPlatform.Repositories
                 logContext,
                 "Retrieving all subjects",
                 async () => await Context.Subjects.Include(s => s.Topics).ToListAsync(),
-                results => $"Successfully retrieved {results.Count} subjects");
+                results => $"Successfully retrieved {results.Count()} subjects");
         }
 
         public async Task<Subject?> GetByIdAsync(LogContext logContext, int id)
@@ -30,7 +30,8 @@ namespace AIUpskillingPlatform.Repositories
                 $"Retrieving subject with ID: {id}",
                 async () =>
                 {
-                    var subject = await Context.Subjects.Include(s => s.Topics).FirstOrDefaultAsync(s => s.ID == id) ?? throw new SubjectNotFoundException(id);
+                    var subject = await Context.Subjects.FindAsync(id) ?? throw new SubjectNotFoundException(id);
+                    await Context.Entry(subject).Collection(s => s.Topics).LoadAsync();
                     return subject;
                 },
                 subject => $"Successfully retrieved subject with ID: {subject.ID}");
@@ -39,59 +40,59 @@ namespace AIUpskillingPlatform.Repositories
         public async Task<Subject> CreateAsync(LogContext logContext, Subject subject)
         {
             return await ExecuteWithLoggingAsync(
-            logContext,
-            $"Creating new subject",
-            async () =>
-            {
-                Context.Subjects.Add(subject);
-                await Context.SaveChangesAsync();
-                return subject;
-            },
-            result => $"Successfully created subject with ID: {result.ID}");
+                logContext,
+                $"Creating new subject",
+                async () =>
+                {
+                    Context.Subjects.Add(subject);
+                    await Context.SaveChangesAsync();
+                    return subject;
+                },
+                result => $"Successfully created subject with ID: {result.ID}");
         }
 
         public async Task<Subject> UpdateAsync(LogContext logContext, Subject subject)
         {
             return await ExecuteWithLoggingAsync(
-            logContext,
-            $"Updating subject with ID: {subject.ID}",
-            async () =>
-            {
-                var existingSubject = await Context.Subjects.FindAsync(subject.ID);
-                if (existingSubject == null)
+                logContext,
+                $"Updating subject with ID: {subject.ID}",
+                async () =>
                 {
-                    throw new SubjectNotFoundException(subject.ID);
-                }
-                Context.Entry(existingSubject).CurrentValues.SetValues(subject);
-                await Context.SaveChangesAsync();
-                return existingSubject;
-            },
-            result => $"Successfully updated subject with ID: {result.ID}");
+                    var existingSubject = await Context.Subjects.FindAsync(subject.ID);
+                    if (existingSubject == null)
+                    {
+                        throw new SubjectNotFoundException(subject.ID);
+                    }
+                    Context.Entry(existingSubject).CurrentValues.SetValues(subject);
+                    await Context.SaveChangesAsync();
+                    return existingSubject;
+                },
+                result => $"Successfully updated subject with ID: {result.ID}");
         }
 
         public async Task DeleteAsync(LogContext logContext, int id)
         {
             await ExecuteWithLoggingAsync(
-            logContext,
-            $"Deleting topic with ID: {id}",
-            async () =>
-            {
-                var subject = await Context.Subjects.FindAsync(id);
-                if (subject == null)
+                logContext,
+                $"Deleting subject with ID: {id}",
+                async () =>
                 {
-                    throw new SubjectNotFoundException(id);
-                }
-                Context.Subjects.Remove(subject);
-                await Context.SaveChangesAsync();
-            });
+                    var subject = await Context.Subjects.FindAsync(id);
+                    if (subject == null)
+                    {
+                        throw new SubjectNotFoundException(id);
+                    }
+                    Context.Subjects.Remove(subject);
+                    await Context.SaveChangesAsync();
+                });
         }
 
-        public async Task<bool> CheckIfExists(LogContext logContext,int id)
+        public async Task<bool> SubjectExistsAsync(LogContext logContext, int subjectId)
         {
             return await ExecuteWithLoggingAsync(
-            logContext,
-            $"Checking if subject exists with ID: {id}",
-            async () => await Context.Subjects.AnyAsync(s => s.ID == id));
+                logContext,
+                $"Checking if subject exists with ID: {subjectId}",
+                async () => await Context.Subjects.AnyAsync(s => s.ID == subjectId));
         }
     }
 }

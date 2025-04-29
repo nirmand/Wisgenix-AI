@@ -1,8 +1,11 @@
+using AutoMapper;
 using AIUpskillingPlatform.DTO;
 using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.Data.Entities;
 using AIUpskillingPlatform.Repositories.Interfaces;
+using AIUpskillingPlatform.Common.Exceptions;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace AIUpskillingPlatform.API.Controllers
 {
@@ -12,98 +15,69 @@ namespace AIUpskillingPlatform.API.Controllers
     {
         private readonly ISubjectRepository _subjectRepository;
         private readonly ILoggingService _logger;
+        private readonly IMapper _mapper;
 
-        public SubjectsController(ISubjectRepository subjectRepository, ILoggingService logger)
+        public SubjectsController(ISubjectRepository subjectRepository, ILoggingService logger, IMapper mapper)
         {
             _subjectRepository = subjectRepository;
             _logger = logger;
+            _mapper = mapper;
         }
 
-        [HttpGet("get-subjects")]
+        [HttpGet("subjects")]
         public async Task<ActionResult<IEnumerable<SubjectDto>>> GetSubjects()
         {
             LogContext logContext = LogContext.Create("GetSubjects");
             try
             {
-                _logger.LogInformation("Getting all subjects");
                 var subjects = await _subjectRepository.GetAllAsync(logContext);
-                var subjectDtos = subjects.Select(s => new SubjectDto
-                {
-                    ID = s.ID,
-                    SubjectName = s.SubjectName,
-                    Topics = s.Topics.Select(t => new TopicDto
-                    {
-                        ID = t.ID,
-                        TopicName = t.TopicName
-                    }).ToList()
-                });
-                _logger.LogInformation("Successfully retrieved all subjects");
+                var subjectDtos = _mapper.Map<IEnumerable<SubjectDto>>(subjects);
                 return Ok(subjectDtos);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while getting all subjects");
-                return StatusCode(500, "An error occurred while retrieving subjects");
+                _logger.LogOperationError<Subject>(logContext, ex, "Unhandled error getting all subjects");
+                return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred while retrieving subjects");
             }
         }
 
-        [HttpGet("get-subject/{id}")]
+        [HttpGet("subject/{id}")]
         public async Task<ActionResult<SubjectDto>> GetSubject(int id)
         {
             LogContext logContext = LogContext.Create("GetSubject");
             try
             {
-                _logger.LogInformation($"Getting subject {id}");
-                var subject = await _subjectRepository.GetByIdAsync(logContext,id);
-                if (subject == null)
-                {
-                    return NotFound($"Subject with ID {id} was not found");
-                }
-
-                var subjectDto = new SubjectDto
-                {
-                    ID = subject.ID,
-                    SubjectName = subject.SubjectName,
-                    Topics = subject.Topics.Select(t => new TopicDto
-                    {
-                        ID = t.ID,
-                        TopicName = t.TopicName
-                    }).ToList()
-                };
-                _logger.LogInformation($"Found subject with {id}");
+                var subject = await _subjectRepository.GetByIdAsync(logContext, id);
+                var subjectDto = _mapper.Map<SubjectDto>(subject);
                 return Ok(subjectDto);
+            }
+            catch (SubjectNotFoundException ex)
+            {
+                return NotFound(ex.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while getting subject with ID: {Id}", id);
-                return StatusCode(500, "An error occurred while retrieving the subject");
+                _logger.LogOperationError<Subject>(logContext, ex, $"Unhandled error getting subject {id}");
+                return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred while retrieving the subject");
             }
         }
 
         [HttpPost("create-subject")]
-        public async Task<ActionResult<SubjectDto>> CreateSubject(CreateSubjectDto createSubjectDto)
+        public async Task<ActionResult<SubjectDto>> CreateSubject([FromBody] CreateSubjectDto createSubjectDto)
         {
             LogContext logContext = LogContext.Create("CreateSubject");
             try
             {
-                var subject = new Subject
-                {
-                    SubjectName = createSubjectDto.SubjectName
-                };
-
-                var createdSubject = await _subjectRepository.CreateAsync(logContext,subject);
-                var subjectDto = new SubjectDto
-                {
-                    ID = createdSubject.ID,
-                    SubjectName = createdSubject.SubjectName
-                };
+                var subject = _mapper.Map<Subject>(createSubjectDto);
+                var createdSubject = await _subjectRepository.CreateAsync(logContext, subject);
+                var subjectDto = _mapper.Map<SubjectDto>(createdSubject);
 
                 return CreatedAtAction(nameof(GetSubject), new { id = createdSubject.ID }, subjectDto);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while creating subject");
-                return StatusCode(500, "An error occurred while creating the subject");
+                _logger.LogOperationError<Subject>(logContext, ex, "Error creating subject");
+                return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred while creating the subject");
             }
         }
 
@@ -113,21 +87,24 @@ namespace AIUpskillingPlatform.API.Controllers
             LogContext logContext = LogContext.Create("UpdateSubject");
             try
             {
-                var subject = await _subjectRepository.GetByIdAsync(logContext,id);
-                if (subject == null)
+                var existingSubject = await _subjectRepository.GetByIdAsync(logContext, id);
+                if (existingSubject == null)
                 {
                     return NotFound($"Subject with ID {id} was not found.");
                 }
 
-                subject.SubjectName = updateSubjectDto.SubjectName;
-                await _subjectRepository.UpdateAsync(logContext,subject);
-
+                _mapper.Map(updateSubjectDto, existingSubject);
+                await _subjectRepository.UpdateAsync(logContext, existingSubject);
                 return NoContent();
+            }
+            catch (SubjectNotFoundException ex)
+            {
+                return NotFound(ex.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while updating subject with ID: {Id}", id);
-                return StatusCode(500, "An error occurred while updating the subject");
+                _logger.LogOperationError<Subject>(logContext, ex, $"Error updating subject {id}");
+                return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred while updating the subject");
             }
         }
 
@@ -137,19 +114,17 @@ namespace AIUpskillingPlatform.API.Controllers
             LogContext logContext = LogContext.Create("DeleteSubject");
             try
             {
-                var subject = await _subjectRepository.GetByIdAsync(logContext,id);
-                if (subject == null)
-                {
-                    return NotFound($"Subject with ID {id} was not found.");
-                }
-
-                await _subjectRepository.DeleteAsync(logContext,id);
+                await _subjectRepository.DeleteAsync(logContext, id);
                 return NoContent();
+            }
+            catch (SubjectNotFoundException ex)
+            {
+                return NotFound(ex.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while deleting subject with ID: {Id}", id);
-                return StatusCode(500, "An error occurred while deleting the subject");
+                _logger.LogOperationError<Subject>(logContext, ex, $"Error deleting subject {id}");
+                return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred while deleting the subject");
             }
         }
     }
