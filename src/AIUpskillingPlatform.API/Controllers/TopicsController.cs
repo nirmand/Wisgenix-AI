@@ -134,7 +134,6 @@ public class TopicsController : ControllerBase
         }
         catch (TopicNotFoundException ex)
         {
-            _logger.LogError(ex, $"Topic with ID: {id} was not found for deletion");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
