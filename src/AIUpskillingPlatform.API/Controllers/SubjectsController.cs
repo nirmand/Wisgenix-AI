@@ -90,7 +90,7 @@ namespace AIUpskillingPlatform.API.Controllers
                 var existingSubject = await _subjectRepository.GetByIdAsync(logContext, id);
                 if (existingSubject == null)
                 {
-                    return NotFound($"Subject with ID {id} was not found.");
+                    return NotFound($"Subject with ID {id} was not found");
                 }
 
                 _mapper.Map(updateSubjectDto, existingSubject);

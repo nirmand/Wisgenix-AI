@@ -103,7 +103,7 @@ public class TopicsController : ControllerBase
             var existingTopic = await _topicRepository.GetByIdAsync(logContext, id);
             if (existingTopic == null)
             {
-                return NotFound($"Topic with ID {id} was not found.");
+                return NotFound($"Topic with ID {id} was not found");
             }
 
             _mapper.Map(updateTopicDto, existingTopic);

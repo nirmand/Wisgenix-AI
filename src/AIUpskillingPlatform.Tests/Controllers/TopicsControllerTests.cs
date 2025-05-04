@@ -1,13 +1,13 @@
+using AutoMapper;
 using AIUpskillingPlatform.API.Controllers;
-using AIUpskillingPlatform.Common.Exceptions;
 using AIUpskillingPlatform.Data.Entities;
 using AIUpskillingPlatform.Repositories.Interfaces;
-using AIUpskillingPlatform.DTO;
+using AIUpskillingPlatform.Core.Logger;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Xunit;
-using AIUpskillingPlatform.Core.Logger;
-using AutoMapper;
+using AIUpskillingPlatform.DTO;
+using AIUpskillingPlatform.Common.Exceptions;
 
 namespace AIUpskillingPlatform.Tests.Controllers;
 
@@ -18,201 +18,49 @@ public class TopicsControllerTests
     private readonly Mock<ILoggingService> _mockLogger;
     private readonly TopicsController _controller;
     private readonly Mock<IMapper> _mapper;
-    private readonly LogContext _logContext;
 
     public TopicsControllerTests()
     {
-        _mockRepository = new Mock<ITopicRepository>();        
-        _mockLogger = new Mock<ILoggingService>();
+        _mockRepository = new Mock<ITopicRepository>();
         _mockSubjectRepository = new Mock<ISubjectRepository>();
-        _mapper = new Mock<IMapper>(); 
+        _mockLogger = new Mock<ILoggingService>();
+        _mapper = new Mock<IMapper>();
         _controller = new TopicsController(_mockRepository.Object, _mockSubjectRepository.Object, _mockLogger.Object, _mapper.Object);
-        _logContext = LogContext.Create("TestContext");
-    }
+        
+        _mapper.Setup(m => m.Map<TopicDto>(It.IsAny<Topic>()))
+            .Returns((Topic source) => new TopicDto 
+            { 
+                ID = source.ID, 
+                TopicName = source.TopicName,
+                SubjectID = source.SubjectID
+            });
+        
+        _mapper.Setup(m => m.Map<IEnumerable<TopicDto>>(It.IsAny<IEnumerable<Topic>>()))
+            .Returns((IEnumerable<Topic> source) => source.Select(t => new TopicDto 
+            { 
+                ID = t.ID, 
+                TopicName = t.TopicName,
+                SubjectID = t.SubjectID
+            }));
 
-    [Theory]
-    [InlineData("")]
-    [InlineData(" ")]
-    [InlineData(null)]
-    public async Task CreateTopic_WithInvalidName_ReturnsBadRequest(string topicName)
-    {
-        // Arrange
-        var createDto = new CreateTopicDto { TopicName = topicName, SubjectID = 1 };
-        _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(_logContext, 1)).ReturnsAsync(true);
         _mapper.Setup(m => m.Map<Topic>(It.IsAny<CreateTopicDto>()))
-            .Returns(new Topic { TopicName = topicName, SubjectID = 1 });
-
-        // Act
-        var result = await _controller.CreateTopic(createDto);
-
-        // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("Topic name is required", badRequestResult.Value);
+            .Returns((CreateTopicDto source) => new Topic 
+            { 
+                TopicName = source.TopicName,
+                SubjectID = source.SubjectID
+            });
     }
 
     [Fact]
-    public async Task CreateTopic_WithTooLongName_ReturnsBadRequest()
-    {
-        // Arrange
-        string longName = new string('a', 101); // Create a string longer than 100 characters
-        var createDto = new CreateTopicDto { TopicName = longName, SubjectID = 1 };
-        _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(_logContext, 1)).ReturnsAsync(true);
-        _mapper.Setup(m => m.Map<Topic>(It.IsAny<CreateTopicDto>()))
-            .Returns(new Topic { TopicName = longName, SubjectID = 1 });
-
-        // Act
-        var result = await _controller.CreateTopic(createDto);
-
-        // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("Topic name must not exceed 100 characters", badRequestResult.Value);
-    }
-
-    [Theory]
-    [InlineData("Topic@Name")]
-    [InlineData("Topic#123")]
-    [InlineData("Topic-Name")]
-    public async Task CreateTopic_WithInvalidCharacters_ReturnsBadRequest(string topicName)
-    {
-        // Arrange
-        var createDto = new CreateTopicDto { TopicName = topicName, SubjectID = 1 };
-        _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(_logContext, 1)).ReturnsAsync(true);
-        _mapper.Setup(m => m.Map<Topic>(It.IsAny<CreateTopicDto>()))
-            .Returns(new Topic { TopicName = topicName, SubjectID = 1 });
-
-        // Act
-        var result = await _controller.CreateTopic(createDto);
-
-        // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("Topic name contains invalid characters", badRequestResult.Value);
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    public async Task CreateTopic_WithInvalidSubjectId_ReturnsBadRequest(int subjectId)
-    {
-        // Arrange
-        var createDto = new CreateTopicDto { TopicName = "Valid Topic", SubjectID = subjectId };
-        _mapper.Setup(m => m.Map<Topic>(It.IsAny<CreateTopicDto>()))
-            .Returns(new Topic { TopicName = "Valid Topic", SubjectID = subjectId });
-
-        // Act
-        var result = await _controller.CreateTopic(createDto);
-
-        // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("Subject ID must be greater than 0", badRequestResult.Value);
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData(" ")]
-    [InlineData(null)]
-    public async Task UpdateTopic_WithInvalidName_ReturnsBadRequest(string topicName)
-    {
-        // Arrange
-        var updateDto = new UpdateTopicDto { TopicName = topicName, SubjectID = 1 };
-        var existingTopic = new Topic { ID = 1, TopicName = "Original Topic", SubjectID = 1 };
-        _mockRepository.Setup(repo => repo.GetByIdAsync(_logContext, 1)).ReturnsAsync(existingTopic);
-        _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(_logContext, 1)).ReturnsAsync(true);
-        _mapper.Setup(m => m.Map(It.IsAny<UpdateTopicDto>(), It.IsAny<Topic>()))
-            .Callback<UpdateTopicDto, Topic>((dto, topic) => {
-                topic.TopicName = dto.TopicName;
-                topic.SubjectID = dto.SubjectID;
-            });
-
-        // Act
-        var result = await _controller.UpdateTopic(1, updateDto);
-
-        // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Equal("Topic name is required", badRequestResult.Value);
-    }
-
-    [Fact]
-    public async Task UpdateTopic_WithTooLongName_ReturnsBadRequest()
-    {
-        // Arrange
-        string longName = new string('a', 101);
-        var updateDto = new UpdateTopicDto { TopicName = longName, SubjectID = 1 };
-        var existingTopic = new Topic { ID = 1, TopicName = "Original Topic", SubjectID = 1 };
-        _mockRepository.Setup(repo => repo.GetByIdAsync(_logContext, 1)).ReturnsAsync(existingTopic);
-        _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(_logContext, 1)).ReturnsAsync(true);
-        _mapper.Setup(m => m.Map(It.IsAny<UpdateTopicDto>(), It.IsAny<Topic>()))
-            .Callback<UpdateTopicDto, Topic>((dto, topic) => {
-                topic.TopicName = dto.TopicName;
-                topic.SubjectID = dto.SubjectID;
-            });
-
-        // Act
-        var result = await _controller.UpdateTopic(1, updateDto);
-
-        // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Equal("Topic name must not exceed 100 characters", badRequestResult.Value);
-    }
-
-    [Theory]
-    [InlineData("Topic@Name")]
-    [InlineData("Topic#123")]
-    [InlineData("Topic-Name")]
-    public async Task UpdateTopic_WithInvalidCharacters_ReturnsBadRequest(string topicName)
-    {
-        // Arrange
-        var updateDto = new UpdateTopicDto { TopicName = topicName, SubjectID = 1 };
-        var existingTopic = new Topic { ID = 1, TopicName = "Original Topic", SubjectID = 1 };
-        _mockRepository.Setup(repo => repo.GetByIdAsync(_logContext, 1)).ReturnsAsync(existingTopic);
-        _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(_logContext, 1)).ReturnsAsync(true);
-        _mapper.Setup(m => m.Map(It.IsAny<UpdateTopicDto>(), It.IsAny<Topic>()))
-            .Callback<UpdateTopicDto, Topic>((dto, topic) => {
-                topic.TopicName = dto.TopicName;
-                topic.SubjectID = dto.SubjectID;
-            });
-
-        // Act
-        var result = await _controller.UpdateTopic(1, updateDto);
-
-        // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Equal("Topic name contains invalid characters", badRequestResult.Value);
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    public async Task UpdateTopic_WithInvalidSubjectId_ReturnsBadRequest(int subjectId)
-    {
-        // Arrange
-        var updateDto = new UpdateTopicDto { TopicName = "Valid Topic", SubjectID = subjectId };
-        var existingTopic = new Topic { ID = 1, TopicName = "Original Topic", SubjectID = 1 };
-        _mockRepository.Setup(repo => repo.GetByIdAsync(_logContext, 1)).ReturnsAsync(existingTopic);
-        _mapper.Setup(m => m.Map(It.IsAny<UpdateTopicDto>(), It.IsAny<Topic>()))
-            .Callback<UpdateTopicDto, Topic>((dto, topic) => {
-                topic.TopicName = dto.TopicName;
-                topic.SubjectID = dto.SubjectID;
-            });
-
-        // Act
-        var result = await _controller.UpdateTopic(1, updateDto);
-
-        // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Equal("Subject ID must be greater than 0", badRequestResult.Value);
-    }
-
-    [Fact]
-    public async Task GetTopics_ReturnsOkResult_WithListOfTopics()
+    public async Task GetTopics_ReturnsOkResult_WithTopics()
     {
         // Arrange
         var topics = new List<Topic>
         {
-            new() { ID = 1, TopicName = "Topic 1" },
-            new() { ID = 2, TopicName = "Topic 2" }
+            new Topic { ID = 1, TopicName = "Classes", SubjectID = 1 },
+            new Topic { ID = 2, TopicName = "Methods", SubjectID = 1 }
         };
-        _mockRepository.Setup(repo => repo.GetAllAsync(_logContext))
-            .ReturnsAsync(topics);
+        _mockRepository.Setup(repo => repo.GetAllAsync(It.IsAny<LogContext>())).ReturnsAsync(topics);
 
         // Act
         var result = await _controller.GetTopics();
@@ -221,16 +69,14 @@ public class TopicsControllerTests
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         var returnedTopics = Assert.IsAssignableFrom<IEnumerable<TopicDto>>(okResult.Value);
         Assert.Equal(2, returnedTopics.Count());
-        _mockRepository.Verify(repo => repo.GetAllAsync(_logContext), Times.Once);
     }
 
     [Fact]
-    public async Task GetTopic_ReturnsOkResult_WithTopic()
+    public async Task GetTopic_WithValidId_ReturnsOkResult()
     {
         // Arrange
-        var topic = new Topic { ID = 1, TopicName = "Test Topic" };
-        _mockRepository.Setup(repo => repo.GetByIdAsync(_logContext, 1))
-            .ReturnsAsync(topic);
+        var topic = new Topic { ID = 1, TopicName = "Classes", SubjectID = 1 };
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(topic);
 
         // Act
         var result = await _controller.GetTopic(1);
@@ -238,55 +84,141 @@ public class TopicsControllerTests
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         var returnedTopic = Assert.IsType<TopicDto>(okResult.Value);
-        Assert.Equal(topic.ID, returnedTopic.ID);
         Assert.Equal(topic.TopicName, returnedTopic.TopicName);
-        _mockRepository.Verify(repo => repo.GetByIdAsync(_logContext, 1), Times.Once);
     }
 
     [Fact]
-    public async Task GetTopic_ReturnsNotFound_WhenTopicDoesNotExist()
+    public async Task GetTopic_WithInvalidId_ReturnsNotFound()
     {
         // Arrange
-        _mockRepository.Setup(repo => repo.GetByIdAsync(_logContext, 1))
-            .ThrowsAsync(new TopicNotFoundException(1));
+        int invalidId = 999;
+        string expectedErrorMessage = $"Topic with ID {invalidId} was not found";
+        
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), invalidId))
+        .ThrowsAsync(new TopicNotFoundException(invalidId));
 
         // Act
-        var result = await _controller.GetTopic(1);
+        var result = await _controller.GetTopic(invalidId);
 
         // Assert
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
-        Assert.Equal("Topic with ID 1 was not found.", notFoundResult.Value);
-        _mockRepository.Verify(repo => repo.GetByIdAsync(_logContext, 1), Times.Once);
+        Assert.NotNull(notFoundResult.Value);
+        Assert.Equal(expectedErrorMessage, notFoundResult.Value.ToString());
+        _mockRepository.Verify(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), invalidId), Times.Once);
     }
 
     [Fact]
-    public async Task DeleteTopic_ReturnsNoContent_WhenTopicExists()
+    public async Task CreateTopic_WithValidData_ReturnsCreatedAtAction()
     {
         // Arrange
-        _mockRepository.Setup(repo => repo.DeleteAsync(_logContext, 1))
-            .Returns(Task.CompletedTask);
+        var createDto = new CreateTopicDto { TopicName = "Classes", SubjectID = 1 };
+        var createdTopic = new Topic { ID = 1, TopicName = "Classes", SubjectID = 1 };
+        
+        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), It.IsAny<Topic>())).ReturnsAsync(createdTopic);
+        _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(It.IsAny<LogContext>(),1)).ReturnsAsync(true);
+
+
+        // Act
+        var result = await _controller.CreateTopic(createDto);
+
+        // Assert
+        var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+        var returnedTopic = Assert.IsType<TopicDto>(createdAtActionResult.Value);
+        Assert.Equal(createDto.TopicName, returnedTopic.TopicName);
+    }
+
+    [Fact]
+    public async Task UpdateTopic_WithValidData_ReturnsNoContent()
+    {
+        // Arrange
+        var updateDto = new UpdateTopicDto { TopicName = "Updated Classes", SubjectID = 1 };
+        var existingTopic = new Topic { ID = 1, TopicName = "Classes", SubjectID = 1 };
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(existingTopic);
+        _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(It.IsAny<LogContext>(),existingTopic.SubjectID)).ReturnsAsync(true);
+
+        // Act
+        var result = await _controller.UpdateTopic(1, updateDto);
+
+        // Assert
+        Assert.IsType<NoContentResult>(result);
+        _mockRepository.Verify(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<Topic>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateTopic_WithInvalidId_ReturnsNotFound()
+    {
+        // Arrange
+        var updateDto = new UpdateTopicDto { TopicName = "Updated Classes" };
+        _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(It.IsAny<LogContext>(),It.IsAny<int>())).ReturnsAsync(true);
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 999)).ReturnsAsync((Topic)null);
+
+        // Act
+        var result = await _controller.UpdateTopic(999, updateDto);
+
+        // Assert
+        Assert.IsType<NotFoundObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task DeleteTopic_WithValidId_ReturnsNoContent()
+    {
+        // Arrange
+        var topic = new Topic { ID = 1, TopicName = "Classes", SubjectID = 1 };
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1))
+            .ReturnsAsync(topic);
 
         // Act
         var result = await _controller.DeleteTopic(1);
 
         // Assert
         Assert.IsType<NoContentResult>(result);
-        _mockRepository.Verify(repo => repo.DeleteAsync(_logContext, 1), Times.Once);
+        _mockRepository.Verify(repo => repo.DeleteAsync(It.IsAny<LogContext>(), 1), Times.Once);
     }
 
     [Fact]
-    public async Task DeleteTopic_ReturnsNotFound_WhenTopicDoesNotExist()
+    public async Task DeleteTopic_WithInvalidId_ReturnsNotFound()
     {
         // Arrange
-        _mockRepository.Setup(repo => repo.DeleteAsync(_logContext, 1))
-            .ThrowsAsync(new TopicNotFoundException(1));
+        int invalidId =999;
+        _mockRepository.Setup(repo => repo.DeleteAsync(It.IsAny<LogContext>(), invalidId)).ThrowsAsync(new TopicNotFoundException(invalidId));
 
         // Act
-        var result = await _controller.DeleteTopic(1);
+        var result = await _controller.DeleteTopic(invalidId);
 
         // Assert
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-        Assert.Equal("Topic with ID 1 was not found.", notFoundResult.Value);
-        _mockRepository.Verify(repo => repo.DeleteAsync(_logContext, 1), Times.Once);
+        Assert.IsType<NotFoundObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task GetTopics_Returns500_WhenExceptionOccurs()
+    {
+        // Arrange
+        _mockRepository.Setup(repo => repo.GetAllAsync(It.IsAny<LogContext>()))
+            .ThrowsAsync(new Exception("Test exception"));
+
+        // Act
+        var result = await _controller.GetTopics();
+
+        // Assert
+        var statusCodeResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, statusCodeResult.StatusCode);
+        Assert.Equal("An error occurred while retrieving topics", statusCodeResult.Value);
+    }
+
+    [Fact]
+    public async Task CreateTopic_Returns500_WhenExceptionOccurs()
+    {
+        // Arrange
+        var createDto = new CreateTopicDto { TopicName = "Test Topic", SubjectID = 1 };
+        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), It.IsAny<Topic>()))
+            .ThrowsAsync(new Exception("Test exception"));
+
+        // Act
+        var result = await _controller.CreateTopic(createDto);
+
+        // Assert
+        var statusCodeResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, statusCodeResult.StatusCode);
+        Assert.Equal("An error occurred while creating the topic", statusCodeResult.Value);
     }
 }

@@ -73,7 +73,7 @@ public class QuestionsControllerTests
 
         // Assert
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
-        Assert.Equal("Question with ID 1 was not found.", notFoundResult.Value);
+        Assert.Equal("Question with ID 1 was not found", notFoundResult.Value);
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public class QuestionsControllerTests
 
         // Assert
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-        Assert.Equal("Question with ID 1 was not found.", notFoundResult.Value);
+        Assert.Equal("Question with ID 1 was not found", notFoundResult.Value);
     }
 
     [Fact]
@@ -181,7 +181,7 @@ public class QuestionsControllerTests
 
         // Assert
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-        Assert.Equal("Question with ID 1 was not found.", notFoundResult.Value);
+        Assert.Equal("Question with ID 1 was not found", notFoundResult.Value);
     }
 
     [Fact]

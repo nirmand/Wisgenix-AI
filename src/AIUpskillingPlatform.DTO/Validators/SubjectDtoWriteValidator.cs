@@ -10,8 +10,8 @@ public abstract class SubjectDtoWriteValidator<T>: AbstractValidator<T> where T:
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .WithMessage("Subject name is required")
-            .MaximumLength(100)
-            .WithMessage("Subject name must not exceed 100 characters")
+            .MaximumLength(200)
+            .WithMessage("Subject name must not exceed 200 characters")
             .Must(BeValidSubjectName)
             .WithMessage("Subject name contains invalid characters");
 

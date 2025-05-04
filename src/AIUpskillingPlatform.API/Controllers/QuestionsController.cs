@@ -142,7 +142,7 @@ public class QuestionsController : ControllerBase
             if (question == null)
             {
                 _logger.LogError(new QuestionNotFoundException(id), $"Question with ID: {id} was not found for update");
-                return NotFound($"Question with ID {id} was not found.");
+                return NotFound($"Question with ID {id} was not found");
             }
 
             question.QuestionText = updateQuestionDto.QuestionText;

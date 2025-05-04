@@ -10,8 +10,8 @@ public abstract class TopicDtoWriteValidator<T>: AbstractValidator<T> where T: W
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .WithMessage("Topic name is required")
-            .MaximumLength(100)
-            .WithMessage("Topic name must not exceed 100 characters")
+            .MaximumLength(200)
+            .WithMessage("Topic name must not exceed 200 characters")
             .Must(BeValidTopicName)
             .WithMessage("Topic name contains invalid characters");
 
