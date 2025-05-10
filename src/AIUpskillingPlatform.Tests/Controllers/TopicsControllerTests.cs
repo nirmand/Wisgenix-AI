@@ -221,4 +221,99 @@ public class TopicsControllerTests
         Assert.Equal(500, statusCodeResult.StatusCode);
         Assert.Equal("An error occurred while creating the topic", statusCodeResult.Value);
     }
+
+    [Fact]
+    public async Task CreateTopic_WithInvalidModelState_ReturnsBadRequest()
+    {
+        // Arrange
+        var createDto = new CreateTopicDto();
+        _controller.ModelState.AddModelError("TopicName", "Topic name is required");
+
+        // Act
+        var result = await _controller.CreateTopic(createDto);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task CreateTopic_WithInvalidSubjectId_ReturnsBadRequest()
+    {
+        // Arrange
+        var createDto = new CreateTopicDto { TopicName = "Test Topic", SubjectID = 1 };
+        _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(It.IsAny<LogContext>(), 1))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.CreateTopic(createDto);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal($"Subject with ID {createDto.SubjectID} does not exist", badRequestResult.Value);
+    }
+
+    [Fact]
+    public async Task UpdateTopic_WithInvalidModelState_ReturnsBadRequest()
+    {
+        // Arrange
+        var updateDto = new UpdateTopicDto();
+        _controller.ModelState.AddModelError("TopicName", "Topic name is required");
+
+        // Act
+        var result = await _controller.UpdateTopic(1, updateDto);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task UpdateTopic_WithInvalidSubjectId_ReturnsBadRequest()
+    {
+        // Arrange
+        var updateDto = new UpdateTopicDto { TopicName = "Test Topic", SubjectID = 1 };
+        _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(It.IsAny<LogContext>(), 1))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.UpdateTopic(1, updateDto);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal($"Subject with ID {updateDto.SubjectID} does not exist", badRequestResult.Value);
+    }
+
+    [Fact]
+    public async Task UpdateTopic_Returns500_WhenExceptionOccurs()
+    {
+        // Arrange
+        var updateDto = new UpdateTopicDto { TopicName = "Test Topic", SubjectID = 1 };
+        _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(It.IsAny<LogContext>(), 1))
+            .ReturnsAsync(true);
+        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<Topic>()))
+            .ThrowsAsync(new Exception("Test exception"));
+
+        // Act
+        var result = await _controller.UpdateTopic(1, updateDto);
+
+        // Assert
+        var statusCodeResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, statusCodeResult.StatusCode);
+        Assert.Equal("An error occurred while updating the topic", statusCodeResult.Value);
+    }
+
+    [Fact]
+    public async Task DeleteTopic_Returns500_WhenExceptionOccurs()
+    {
+        // Arrange
+        _mockRepository.Setup(repo => repo.DeleteAsync(It.IsAny<LogContext>(), 1))
+            .ThrowsAsync(new Exception("Test exception"));
+
+        // Act
+        var result = await _controller.DeleteTopic(1);
+
+        // Assert
+        var statusCodeResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, statusCodeResult.StatusCode);
+        Assert.Equal("An error occurred while deleting the topic", statusCodeResult.Value);
+    }
 }

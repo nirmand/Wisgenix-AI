@@ -211,4 +211,83 @@ public class SubjectsControllerTests
         Assert.Equal(500, statusCodeResult.StatusCode);
         Assert.Equal("An error occurred while creating the subject", statusCodeResult.Value);
     }
+
+    [Fact]
+    public async Task CreateSubject_WithInvalidModelState_ReturnsBadRequest()
+    {
+        // Arrange
+        var createDto = new CreateSubjectDto();
+        _controller.ModelState.AddModelError("SubjectName", "Subject name is required");
+
+        // Act
+        var result = await _controller.CreateSubject(createDto);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdateSubject_WithInvalidModelState_ReturnsBadRequest()
+    {
+        // Arrange
+        var updateDto = new UpdateSubjectDto();
+        _controller.ModelState.AddModelError("SubjectName", "Subject name is required");
+
+        // Act
+        var result = await _controller.UpdateSubject(1, updateDto);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task UpdateSubject_Returns500_WhenExceptionOccurs()
+    {
+        // Arrange
+        var updateDto = new UpdateSubjectDto { SubjectName = "Test Subject" };
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1))
+            .ReturnsAsync(new Subject { ID = 1, SubjectName = "Old Name" });
+        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<Subject>()))
+            .ThrowsAsync(new Exception("Test exception"));
+
+        // Act
+        var result = await _controller.UpdateSubject(1, updateDto);
+
+        // Assert
+        var statusCodeResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, statusCodeResult.StatusCode);
+        Assert.Equal("An error occurred while updating the subject", statusCodeResult.Value);
+    }
+
+    [Fact]
+    public async Task DeleteSubject_Returns500_WhenExceptionOccurs()
+    {
+        // Arrange
+        _mockRepository.Setup(repo => repo.DeleteAsync(It.IsAny<LogContext>(), 1))
+            .ThrowsAsync(new Exception("Test exception"));
+
+        // Act
+        var result = await _controller.DeleteSubject(1);
+
+        // Assert
+        var statusCodeResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, statusCodeResult.StatusCode);
+        Assert.Equal("An error occurred while deleting the subject", statusCodeResult.Value);
+    }
+
+    [Fact]
+    public async Task GetSubject_Returns500_WhenExceptionOccurs()
+    {
+        // Arrange
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1))
+            .ThrowsAsync(new Exception("Test exception"));
+
+        // Act
+        var result = await _controller.GetSubject(1);
+
+        // Assert
+        var statusCodeResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, statusCodeResult.StatusCode);
+        Assert.Equal("An error occurred while retrieving the subject", statusCodeResult.Value);
+    }
 }

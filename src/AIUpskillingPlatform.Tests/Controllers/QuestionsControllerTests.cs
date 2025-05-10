@@ -249,4 +249,144 @@ public class QuestionsControllerTests
         // Assert
         Assert.IsType<BadRequestObjectResult>(result.Result);
     }
+
+    [Fact]
+    public async Task GetQuestion_Returns500_WhenExceptionOccurs()
+    {
+        // Arrange
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1))
+            .ThrowsAsync(new Exception("Test exception"));
+
+        // Act
+        var result = await _controller.GetQuestion(1);
+
+        // Assert
+        var statusCodeResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, statusCodeResult.StatusCode);
+        Assert.Equal("An error occurred while retrieving the question", statusCodeResult.Value);
+    }
+
+    [Fact]
+    public async Task CreateQuestion_Returns500_WhenExceptionOccurs()
+    {
+        // Arrange
+        var createDto = new CreateQuestionDto
+        {
+            QuestionText = "Test Question",
+            TopicID = 1,
+            DifficultyLevel = 2,
+            MaxScore = 5,
+            GeneratedBy = QuestionSource.AI,
+            QuestionSourceReference = "https://test.com"
+        };
+        _mockRepository.Setup(repo => repo.TopicExistsAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(true);
+        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), It.IsAny<Question>()))
+            .ThrowsAsync(new Exception("Test exception"));
+
+        // Act
+        var result = await _controller.CreateQuestion(createDto);
+
+        // Assert
+        var statusCodeResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, statusCodeResult.StatusCode);
+        Assert.Equal("An error occurred while creating the question", statusCodeResult.Value);
+    }
+
+    [Fact]
+    public async Task UpdateQuestion_Returns500_WhenExceptionOccurs()
+    {
+        // Arrange
+        var updateDto = new UpdateQuestionDto
+        {
+            QuestionText = "Updated Question",
+            TopicID = 1,
+            DifficultyLevel = 2,
+            MaxScore = 5,
+            GeneratedBy = QuestionSource.AI,
+            QuestionSourceReference = "https://test.com"
+        };
+        _mockRepository.Setup(repo => repo.TopicExistsAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(true);
+        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<Question>()))
+            .ThrowsAsync(new Exception("Test exception"));
+
+        // Act
+        var result = await _controller.UpdateQuestion(1, updateDto);
+
+        // Assert
+        var statusCodeResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, statusCodeResult.StatusCode);
+        Assert.Equal("An error occurred while updating the question", statusCodeResult.Value);
+    }
+
+    [Fact]
+    public async Task DeleteQuestion_Returns500_WhenExceptionOccurs()
+    {
+        // Arrange
+        _mockRepository.Setup(repo => repo.DeleteAsync(It.IsAny<LogContext>(), 1))
+            .ThrowsAsync(new Exception("Test exception"));
+
+        // Act
+        var result = await _controller.DeleteQuestion(1);
+
+        // Assert
+        var statusCodeResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, statusCodeResult.StatusCode);
+        Assert.Equal("An error occurred while deleting the question", statusCodeResult.Value);
+    }
+
+    [Fact]
+    public async Task UpdateQuestion_WithInvalidModelState_ReturnsBadRequest()
+    {
+        // Arrange
+        var updateDto = new UpdateQuestionDto();
+        _controller.ModelState.AddModelError("QuestionText", "Question text is required");
+
+        // Act
+        var result = await _controller.UpdateQuestion(1, updateDto);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task CreateQuestion_WithInvalidMaxScore_ReturnsBadRequest()
+    {
+        // Arrange
+        var createDto = new CreateQuestionDto 
+        { 
+            QuestionText = "Test Question",
+            TopicID = 1,
+            DifficultyLevel = 2,
+            MaxScore = 0, // Invalid score
+            GeneratedBy = QuestionSource.AI,
+            QuestionSourceReference = "https://test.com"
+        };
+        _controller.ModelState.AddModelError("MaxScore", "Max score must be greater than 0");
+
+        // Act
+        var result = await _controller.CreateQuestion(createDto);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdateQuestion_WithInvalidTopicId_ReturnsBadRequest()
+    {
+        // Arrange
+        var updateDto = new UpdateQuestionDto
+        {
+            QuestionText = "Updated Question",
+            TopicID = 1
+        };
+        _mockRepository.Setup(repo => repo.TopicExistsAsync(It.IsAny<LogContext>(), 1))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.UpdateQuestion(1, updateDto);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal("Topic with ID 1 does not exist", badRequestResult.Value);
+    }
 }
