@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace AIUpskillingPlatform.API.DTOs;
+namespace AIUpskillingPlatform.DTO;
 
-public class CreateQuestionOptionDto
+public abstract class WriteQuestionOptionBaseDto
 {
     [Required]
     public int QuestionID { get; set; }
@@ -15,17 +15,12 @@ public class CreateQuestionOptionDto
     public bool IsCorrect { get; set; }
 }
 
-public class UpdateQuestionOptionDto
+public class CreateQuestionOptionDto : WriteQuestionOptionBaseDto
 {
-    [Required]
-    public int QuestionID { get; set; }
+}
 
-    [Required]
-    [MaxLength(4000)]
-    public string OptionText { get; set; } = string.Empty;
-
-    [Required]
-    public bool IsCorrect { get; set; }
+public class UpdateQuestionOptionDto : WriteQuestionOptionBaseDto
+{
 }
 
 public class QuestionOptionDto
@@ -34,4 +29,5 @@ public class QuestionOptionDto
     public int QuestionID { get; set; }
     public string OptionText { get; set; } = string.Empty;
     public bool IsCorrect { get; set; }
-} 
+    public string QuestionText { get; set; } = string.Empty;
+}

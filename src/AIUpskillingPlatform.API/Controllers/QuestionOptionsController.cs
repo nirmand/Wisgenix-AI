@@ -1,9 +1,11 @@
-using AIUpskillingPlatform.API.DTOs;
 using AIUpskillingPlatform.Common.Exceptions;
 using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.Data.Entities;
+using AIUpskillingPlatform.DTO;
 using AIUpskillingPlatform.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
+using AutoMapper;
 
 namespace AIUpskillingPlatform.API.Controllers;
 
@@ -13,187 +15,139 @@ public class QuestionOptionsController : ControllerBase
 {
     private readonly IQuestionOptionRepository _questionOptionRepository;
     private readonly ILoggingService _logger;
+    private readonly IMapper _mapper;
 
-    public QuestionOptionsController(IQuestionOptionRepository questionOptionRepository, ILoggingService logger)
+    public QuestionOptionsController(IQuestionOptionRepository questionOptionRepository, ILoggingService logger, IMapper mapper)
     {
         _questionOptionRepository = questionOptionRepository;
         _logger = logger;
+        _mapper = mapper;
     }
 
     [HttpGet("options")]
     public async Task<ActionResult<IEnumerable<QuestionOptionDto>>> GetQuestionOptions()
     {
+        var logContext = LogContext.Create("GetQuestionOptions");
         try
         {
-            _logger.LogInformation("Getting all question options");
-            var options = await _questionOptionRepository.GetAllAsync();
-            var optionDtos = options.Select(o => new QuestionOptionDto
-            {
-                ID = o.ID,
-                OptionText = o.OptionText,
-                IsCorrect = o.IsCorrect,
-                QuestionID = o.QuestionID
-            });
-            _logger.LogInformation($"Successfully retrieved {options.Count()} question options");
+            var options = await _questionOptionRepository.GetAllAsync(logContext);
+            var optionDtos = _mapper.Map<IEnumerable<QuestionOptionDto>>(options);
             return Ok(optionDtos);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while getting all question options");
-            return StatusCode(500, "An error occurred while retrieving question options");
+            _logger.LogOperationError<QuestionOption>(logContext, ex, "Error occurred while getting all question options");
+            return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred while retrieving question options");
         }
     }
 
     [HttpGet("option/{id}")]
     public async Task<ActionResult<QuestionOptionDto>> GetQuestionOption(int id)
     {
+        var logContext = LogContext.Create("GetQuestionOption");
         try
         {
-            _logger.LogInformation($"Getting question option with ID: {id}");
-            var option = await _questionOptionRepository.GetByIdAsync(id);
-            var optionDto = new QuestionOptionDto
-            {
-                ID = option.ID,
-                OptionText = option.OptionText,
-                IsCorrect = option.IsCorrect,
-                QuestionID = option.QuestionID
-            };
-            _logger.LogInformation($"Successfully retrieved question option with ID: {id}");
+            var option = await _questionOptionRepository.GetByIdAsync(logContext, id);
+            var optionDto = _mapper.Map<QuestionOptionDto>(option);
             return Ok(optionDto);
         }
         catch (QuestionOptionNotFoundException ex)
         {
-            _logger.LogError(ex, $"Question option with ID: {id} was not found");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error occurred while getting question option with ID: {id}");
-            return StatusCode(500, "An error occurred while retrieving the question option");
+            _logger.LogOperationError<QuestionOption>(logContext, ex, $"Error occurred while getting question option {id}");
+            return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred while retrieving the question option");
         }
     }
 
     [HttpGet("options-for-question/{questionId}")]
     public async Task<ActionResult<IEnumerable<QuestionOptionDto>>> GetOptionsByQuestion(int questionId)
     {
+        var logContext = LogContext.Create("GetOptionsByQuestion");
         try
         {
-            _logger.LogInformation($"Getting options for question ID: {questionId}");
-            var options = await _questionOptionRepository.GetByQuestionIdAsync(questionId);
-            var optionDtos = options.Select(o => new QuestionOptionDto
-            {
-                ID = o.ID,
-                OptionText = o.OptionText,
-                IsCorrect = o.IsCorrect,
-                QuestionID = o.QuestionID
-            });
-            _logger.LogInformation($"Successfully retrieved {options.Count()} options for question ID: {questionId}");
+            var options = await _questionOptionRepository.GetByQuestionIdAsync(logContext, questionId);
+            var optionDtos = _mapper.Map<IEnumerable<QuestionOptionDto>>(options);
             return Ok(optionDtos);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error occurred while getting options for question ID: {questionId}");
-            return StatusCode(500, "An error occurred while retrieving question options");
+            _logger.LogOperationError<QuestionOption>(logContext, ex, $"Error occurred while getting options for question {questionId}");
+            return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred while retrieving question options");
         }
     }
 
     [HttpPost("create-option")]
     public async Task<ActionResult<QuestionOptionDto>> CreateQuestionOption(CreateQuestionOptionDto createOptionDto)
     {
+        var logContext = LogContext.Create("CreateQuestionOption");
         try
         {
-            _logger.LogInformation($"Creating new option for question ID: {createOptionDto.QuestionID}");
-
-            // Validate if question exists
-            if (!await _questionOptionRepository.QuestionExistsAsync(createOptionDto.QuestionID))
+            if (!await _questionOptionRepository.QuestionExistsAsync(logContext, createOptionDto.QuestionID))
             {
-                _logger.LogWarning($"Question with ID: {createOptionDto.QuestionID} does not exist");
                 return BadRequest($"Question with ID {createOptionDto.QuestionID} does not exist");
             }
 
-            var option = new QuestionOption
-            {
-                OptionText = createOptionDto.OptionText,
-                IsCorrect = createOptionDto.IsCorrect,
-                QuestionID = createOptionDto.QuestionID
-            };
+            var option = _mapper.Map<QuestionOption>(createOptionDto);
+            var createdOption = await _questionOptionRepository.CreateAsync(logContext, option);
+            var optionDto = _mapper.Map<QuestionOptionDto>(createdOption);
 
-            var createdOption = await _questionOptionRepository.CreateAsync(option);
-            var optionDto = new QuestionOptionDto
-            {
-                ID = createdOption.ID,
-                OptionText = createdOption.OptionText,
-                IsCorrect = createdOption.IsCorrect,
-                QuestionID = createdOption.QuestionID
-            };
-
-            _logger.LogInformation($"Successfully created option with ID: {createdOption.ID}");
             return CreatedAtAction(nameof(GetQuestionOption), new { id = createdOption.ID }, optionDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error occurred while creating option for question ID: {createOptionDto.QuestionID}");
-            return StatusCode(500, "An error occurred while creating the question option");
+            _logger.LogOperationError<QuestionOption>(logContext, ex, "Error occurred while creating question option");
+            return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred while creating the question option");
         }
     }
 
     [HttpPut("update-option/{id}")]
     public async Task<IActionResult> UpdateQuestionOption(int id, UpdateQuestionOptionDto updateOptionDto)
     {
+        var logContext = LogContext.Create("UpdateQuestionOption");
         try
         {
-            _logger.LogInformation($"Updating question option with ID: {id}");
-
-            // Validate if question exists
-            if (!await _questionOptionRepository.QuestionExistsAsync(updateOptionDto.QuestionID))
+            if (!await _questionOptionRepository.QuestionExistsAsync(logContext, updateOptionDto.QuestionID))
             {
-                _logger.LogWarning($"Question with ID: {updateOptionDto.QuestionID} does not exist");
                 return BadRequest($"Question with ID {updateOptionDto.QuestionID} does not exist");
             }
 
-            var option = new QuestionOption
-            {
-                ID = id,
-                OptionText = updateOptionDto.OptionText,
-                IsCorrect = updateOptionDto.IsCorrect,
-                QuestionID = updateOptionDto.QuestionID
-            };
-
-            await _questionOptionRepository.UpdateAsync(option);
-            _logger.LogInformation($"Successfully updated question option with ID: {id}");
+            var option = _mapper.Map<QuestionOption>(updateOptionDto);
+            option.ID = id;
+            
+            await _questionOptionRepository.UpdateAsync(logContext, option);
             return NoContent();
         }
         catch (QuestionOptionNotFoundException ex)
         {
-            _logger.LogError(ex, $"Question option with ID: {id} was not found for update");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error occurred while updating question option with ID: {id}");
-            return StatusCode(500, "An error occurred while updating the question option");
+            _logger.LogOperationError<QuestionOption>(logContext, ex, $"Error occurred while updating question option {id}");
+            return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred while updating the question option");
         }
     }
 
     [HttpDelete("delete-option/{id}")]
     public async Task<IActionResult> DeleteQuestionOption(int id)
     {
+        var logContext = LogContext.Create("DeleteQuestionOption");
         try
         {
-            _logger.LogInformation($"Deleting question option with ID: {id}");
-            await _questionOptionRepository.DeleteAsync(id);
-            _logger.LogInformation($"Successfully deleted question option with ID: {id}");
+            await _questionOptionRepository.DeleteAsync(logContext, id);
             return NoContent();
         }
         catch (QuestionOptionNotFoundException ex)
         {
-            _logger.LogError(ex, $"Question option with ID: {id} was not found for deletion");
             return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error occurred while deleting question option with ID: {id}");
-            return StatusCode(500, "An error occurred while deleting the question option");
+            _logger.LogOperationError<QuestionOption>(logContext, ex, $"Error occurred while deleting question option {id}");
+            return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred while deleting the question option");
         }
     }
 }
