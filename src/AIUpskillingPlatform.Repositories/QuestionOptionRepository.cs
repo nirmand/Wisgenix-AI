@@ -1,170 +1,110 @@
 using AIUpskillingPlatform.Common.Exceptions;
+using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.Data;
 using AIUpskillingPlatform.Data.Entities;
+using AIUpskillingPlatform.Repositories.Base;
 using AIUpskillingPlatform.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace AIUpskillingPlatform.Repositories;
 
-public class QuestionOptionRepository : IQuestionOptionRepository
+public class QuestionOptionRepository : BaseRepository<QuestionOption>, IQuestionOptionRepository
 {
-    private readonly AppDbContext _context;
-    private readonly ILogger<QuestionOptionRepository> _logger;
-
-    public QuestionOptionRepository(AppDbContext context, ILogger<QuestionOptionRepository> logger)
+    public QuestionOptionRepository(AppDbContext context, ILoggingService logger) : base(context, logger)
     {
-        _context = context;
-        _logger = logger;
     }
 
-    public async Task<IEnumerable<QuestionOption>> GetAllAsync()
+    public async Task<IEnumerable<QuestionOption>> GetAllAsync(LogContext logContext)
     {
-        try
-        {
-            _logger.LogInformation("Retrieving all question options");
-            var options = await _context.QuestionOptions
-                .Include(o => o.Question)
-                .ToListAsync();
-            _logger.LogInformation("Successfully retrieved {Count} question options", options.Count);
-            return options;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while retrieving all question options");
-            throw;
-        }
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            "Retrieving all question options",
+            async () => await Context.QuestionOptions.Include(o => o.Question).ToListAsync(),
+            results => $"Successfully retrieved {results.Count()} question options");
     }
 
-    public async Task<QuestionOption?> GetByIdAsync(int id)
+    public async Task<QuestionOption?> GetByIdAsync(LogContext logContext, int id)
     {
-        try
-        {
-            _logger.LogInformation("Retrieving question option with ID: {Id}", id);
-            var option = await _context.QuestionOptions
-                .Include(o => o.Question)
-                .FirstOrDefaultAsync(o => o.ID == id);
-            
-            if (option == null)
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Retrieving question option with ID: {id}",
+            async () =>
             {
-                _logger.LogWarning("Question option with ID: {Id} was not found", id);
-                throw new QuestionOptionNotFoundException(id);
-            }
-            
-            _logger.LogInformation("Successfully retrieved question option with ID: {Id}", id);
-            return option;
-        }
-        catch (QuestionOptionNotFoundException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while retrieving question option with ID: {Id}", id);
-            throw;
-        }
+                var option = await Context.QuestionOptions
+                    .Include(o => o.Question)
+                    .FirstOrDefaultAsync(o => o.ID == id) ?? throw new QuestionOptionNotFoundException(id);
+                return option;
+            },
+            option => $"Successfully retrieved question option with ID: {option.ID}");
     }
 
-    public async Task<QuestionOption> CreateAsync(QuestionOption questionOption)
+    public async Task<QuestionOption> CreateAsync(LogContext logContext, QuestionOption questionOption)
     {
-        try
-        {
-            _logger.LogInformation("Creating new question option for question ID: {QuestionId}", questionOption.QuestionID);
-            _context.QuestionOptions.Add(questionOption);
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully created question option with ID: {Id}", questionOption.ID);
-            return questionOption;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while creating question option for question ID: {QuestionId}", questionOption.QuestionID);
-            throw;
-        }
-    }
-
-    public async Task<QuestionOption> UpdateAsync(QuestionOption questionOption)
-    {
-        try
-        {
-            _logger.LogInformation("Updating question option with ID: {Id}", questionOption.ID);
-            var existingOption = await _context.QuestionOptions.FindAsync(questionOption.ID);
-            if (existingOption == null)
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Creating new question option",
+            async () =>
             {
-                _logger.LogWarning("Question option with ID: {Id} was not found for update", questionOption.ID);
-                throw new QuestionOptionNotFoundException(questionOption.ID);
-            }
-
-            _context.Entry(existingOption).CurrentValues.SetValues(questionOption);
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully updated question option with ID: {Id}", questionOption.ID);
-            return existingOption;
-        }
-        catch (QuestionOptionNotFoundException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while updating question option with ID: {Id}", questionOption.ID);
-            throw;
-        }
+                Context.QuestionOptions.Add(questionOption);
+                await Context.SaveChangesAsync();
+                return questionOption;
+            },
+            result => $"Successfully created question option with ID: {result.ID}");
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task<QuestionOption> UpdateAsync(LogContext logContext, QuestionOption questionOption)
     {
-        try
-        {
-            _logger.LogInformation("Deleting question option with ID: {Id}", id);
-            var option = await _context.QuestionOptions.FindAsync(id);
-            if (option == null)
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Updating question option with ID: {questionOption.ID}",
+            async () =>
             {
-                _logger.LogWarning("Question option with ID: {Id} was not found for deletion", id);
-                throw new QuestionOptionNotFoundException(id);
-            }
-
-            _context.QuestionOptions.Remove(option);
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully deleted question option with ID: {Id}", id);
-        }
-        catch (QuestionOptionNotFoundException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while deleting question option with ID: {Id}", id);
-            throw;
-        }
+                var existingOption = await Context.QuestionOptions.FindAsync(questionOption.ID);
+                if (existingOption == null)
+                {
+                    throw new QuestionOptionNotFoundException(questionOption.ID);
+                }
+                Context.Entry(existingOption).CurrentValues.SetValues(questionOption);
+                await Context.SaveChangesAsync();
+                return existingOption;
+            },
+            result => $"Successfully updated question option with ID: {result.ID}");
     }
 
-    public async Task<bool> QuestionExistsAsync(int questionId)
+    public async Task DeleteAsync(LogContext logContext, int id)
     {
-        try
-        {
-            return await _context.Questions.AnyAsync(q => q.ID == questionId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while checking if question with ID: {QuestionId} exists", questionId);
-            throw;
-        }
+        await ExecuteWithLoggingAsync(
+            logContext,
+            $"Deleting question option with ID: {id}",
+            async () =>
+            {
+                var option = await Context.QuestionOptions.FindAsync(id);
+                if (option == null)
+                {
+                    throw new QuestionOptionNotFoundException(id);
+                }
+                Context.QuestionOptions.Remove(option);
+                await Context.SaveChangesAsync();
+            });
     }
 
-    public async Task<IEnumerable<QuestionOption>> GetByQuestionIdAsync(int questionId)
+    public async Task<bool> QuestionExistsAsync(LogContext logContext, int questionId)
     {
-        try
-        {
-            _logger.LogInformation("Retrieving options for question ID: {QuestionId}", questionId);
-            var options = await _context.QuestionOptions
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Checking if question exists with ID: {questionId}",
+            async () => await Context.Questions.AnyAsync(q => q.ID == questionId));
+    }
+
+    public async Task<IEnumerable<QuestionOption>> GetByQuestionIdAsync(LogContext logContext, int questionId)
+    {
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Retrieving options for question ID: {questionId}",
+            async () => await Context.QuestionOptions
                 .Where(o => o.QuestionID == questionId)
-                .ToListAsync();
-            _logger.LogInformation("Successfully retrieved {Count} options for question ID: {QuestionId}", options.Count, questionId);
-            return options;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while retrieving options for question ID: {QuestionId}", questionId);
-            throw;
-        }
+                .Include(o => o.Question)
+                .ToListAsync(),
+            results => $"Successfully retrieved {results.Count()} options for question ID: {questionId}");
     }
-} 
+}
