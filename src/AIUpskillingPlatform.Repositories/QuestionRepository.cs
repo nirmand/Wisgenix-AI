@@ -1,152 +1,98 @@
 using AIUpskillingPlatform.Common.Exceptions;
+using AIUpskillingPlatform.Core.Logger;
 using AIUpskillingPlatform.Data;
 using AIUpskillingPlatform.Data.Entities;
+using AIUpskillingPlatform.Repositories.Base;
 using AIUpskillingPlatform.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace AIUpskillingPlatform.Repositories;
 
-public class QuestionRepository : IQuestionRepository
+public class QuestionRepository : BaseRepository<Question>, IQuestionRepository
 {
-    private readonly AppDbContext _context;
-    private readonly ILogger<QuestionRepository> _logger;
-
-    public QuestionRepository(AppDbContext context, ILogger<QuestionRepository> logger)
+    public QuestionRepository(AppDbContext context, ILoggingService logger) : base(context, logger)
     {
-        _context = context;
-        _logger = logger;
     }
 
-    public async Task<IEnumerable<Question>> GetAllAsync()
+    public async Task<IEnumerable<Question>> GetAllAsync(LogContext logContext)
     {
-        try
-        {
-            _logger.LogInformation("Retrieving all questions");
-            var questions = await _context.Questions
-                .Include(q => q.Topic)
-                .ToListAsync();
-            _logger.LogInformation("Successfully retrieved {Count} questions", questions.Count);
-            return questions;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while retrieving all questions");
-            throw;
-        }
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            "Retrieving all questions",
+            async () => await Context.Questions.Include(q => q.Topic).ToListAsync(),
+            results => $"Successfully retrieved {results.Count()} questions");
     }
 
-    public async Task<Question?> GetByIdAsync(int id)
+    public async Task<Question?> GetByIdAsync(LogContext logContext, int id)
     {
-        try
-        {
-            _logger.LogInformation("Retrieving question with ID: {Id}", id);
-            var question = await _context.Questions
-                .Include(q => q.Topic)
-                .FirstOrDefaultAsync(q => q.ID == id);
-            
-            if (question == null)
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Retrieving question with ID: {id}",
+            async () =>
             {
-                _logger.LogWarning("Question with ID: {Id} was not found", id);
-                throw new QuestionNotFoundException(id);
-            }
-            
-            _logger.LogInformation("Successfully retrieved question with ID: {Id}", id);
-            return question;
-        }
-        catch (QuestionNotFoundException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while retrieving question with ID: {Id}", id);
-            throw;
-        }
+                var question = await Context.Questions
+                    .Include(q => q.Topic)
+                    .FirstOrDefaultAsync(q => q.ID == id) ?? throw new QuestionNotFoundException(id);
+                return question;
+            },
+            question => $"Successfully retrieved question with ID: {question.ID}");
     }
 
-    public async Task<Question> CreateAsync(Question question)
+    public async Task<Question> CreateAsync(LogContext logContext, Question question)
     {
-        try
-        {
-            _logger.LogInformation("Creating new question for topic ID: {TopicId}", question.TopicID);
-            _context.Questions.Add(question);
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully created question with ID: {Id}", question.ID);
-            return question;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while creating question for topic ID: {TopicId}", question.TopicID);
-            throw;
-        }
-    }
-
-    public async Task<Question> UpdateAsync(Question question)
-    {
-        try
-        {
-            _logger.LogInformation("Updating question with ID: {Id}", question.ID);
-            var existingQuestion = await _context.Questions.FindAsync(question.ID);
-            if (existingQuestion == null)
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Creating new question",
+            async () =>
             {
-                _logger.LogWarning("Question with ID: {Id} was not found for update", question.ID);
-                throw new QuestionNotFoundException(question.ID);
-            }
-
-            _context.Entry(existingQuestion).CurrentValues.SetValues(question);
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully updated question with ID: {Id}", question.ID);
-            return existingQuestion;
-        }
-        catch (QuestionNotFoundException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while updating question with ID: {Id}", question.ID);
-            throw;
-        }
+                Context.Questions.Add(question);
+                await Context.SaveChangesAsync();
+                return question;
+            },
+            result => $"Successfully created question with ID: {result.ID}");
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task<Question> UpdateAsync(LogContext logContext, Question question)
     {
-        try
-        {
-            _logger.LogInformation("Deleting question with ID: {Id}", id);
-            var question = await _context.Questions.FindAsync(id);
-            if (question == null)
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Updating question with ID: {question.ID}",
+            async () =>
             {
-                _logger.LogWarning("Question with ID: {Id} was not found for deletion", id);
-                throw new QuestionNotFoundException(id);
-            }
-
-            _context.Questions.Remove(question);
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("Successfully deleted question with ID: {Id}", id);
-        }
-        catch (QuestionNotFoundException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while deleting question with ID: {Id}", id);
-            throw;
-        }
+                var existingQuestion = await Context.Questions.FindAsync(question.ID);
+                if (existingQuestion == null)
+                {
+                    throw new QuestionNotFoundException(question.ID);
+                }
+                Context.Entry(existingQuestion).CurrentValues.SetValues(question);
+                await Context.SaveChangesAsync();
+                return existingQuestion;
+            },
+            result => $"Successfully updated question with ID: {result.ID}");
     }
 
-    public async Task<bool> TopicExistsAsync(int topicId)
+    public async Task DeleteAsync(LogContext logContext, int id)
     {
-        try
-        {
-            return await _context.Topics.AnyAsync(t => t.ID == topicId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred while checking if topic with ID: {TopicId} exists", topicId);
-            throw;
-        }
+        await ExecuteWithLoggingAsync(
+            logContext,
+            $"Deleting question with ID: {id}",
+            async () =>
+            {
+                var question = await Context.Questions.FindAsync(id);
+                if (question == null)
+                {
+                    throw new QuestionNotFoundException(id);
+                }
+                Context.Questions.Remove(question);
+                await Context.SaveChangesAsync();
+            });
     }
-} 
+
+    public async Task<bool> TopicExistsAsync(LogContext logContext, int topicId)
+    {
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Checking if topic exists with ID: {topicId}",
+            async () => await Context.Topics.AnyAsync(t => t.ID == topicId));
+    }
+}

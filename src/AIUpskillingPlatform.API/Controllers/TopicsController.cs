@@ -84,7 +84,7 @@ public class TopicsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while creating topic");
+            _logger.LogOperationError<Topic>(logContext, ex, "Error occurred while creating topic");
             return StatusCode(500, "An error occurred while creating the topic");
         }
     }
@@ -116,7 +116,7 @@ public class TopicsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error occurred while updating topic with ID: {id}");
+            _logger.LogOperationError<Topic>(logContext, ex, $"Error occurred while updating topic with ID: {id}");
             return StatusCode(500, "An error occurred while updating the topic");
         }
     }
@@ -138,7 +138,7 @@ public class TopicsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error occurred while deleting topic with ID: {id}");
+            _logger.LogOperationError<Topic>(logContext,ex, $"Error occurred while deleting topic with ID: {id}");
             return StatusCode(500, "An error occurred while deleting the topic");
         }
     }

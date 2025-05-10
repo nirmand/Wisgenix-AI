@@ -1,12 +1,11 @@
 using AIUpskillingPlatform.API.Controllers;
-using AIUpskillingPlatform.API.DTOs;
-using AIUpskillingPlatform.Common.Exceptions;
-using AIUpskillingPlatform.Data.Entities;
-using AIUpskillingPlatform.Repositories.Interfaces;
 using AIUpskillingPlatform.Common;
+using AIUpskillingPlatform.Common.Exceptions;
 using AIUpskillingPlatform.Core.Logger;
+using AIUpskillingPlatform.Data.Entities;
+using AIUpskillingPlatform.DTO;
+using AIUpskillingPlatform.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -31,10 +30,10 @@ public class QuestionsControllerTests
         // Arrange
         var questions = new List<Question>
         {
-            new() { ID = 1, QuestionText = "Test Question 1", TopicID = 1 },
-            new() { ID = 2, QuestionText = "Test Question 2", TopicID = 1 }
+            new() { ID = 1, QuestionText = "Test Question 1", TopicID = 1, Topic = new Topic { TopicName = "Test Topic" } },
+            new() { ID = 2, QuestionText = "Test Question 2", TopicID = 1, Topic = new Topic { TopicName = "Test Topic" } }
         };
-        _mockRepository.Setup(repo => repo.GetAllAsync()).ReturnsAsync(questions);
+        _mockRepository.Setup(repo => repo.GetAllAsync(It.IsAny<LogContext>())).ReturnsAsync(questions);
 
         // Act
         var result = await _controller.GetQuestions();
@@ -43,14 +42,40 @@ public class QuestionsControllerTests
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         var returnedQuestions = Assert.IsAssignableFrom<IEnumerable<QuestionDto>>(okResult.Value);
         Assert.Equal(2, returnedQuestions.Count());
+        Assert.All(returnedQuestions, q => Assert.Equal("Test Topic", q.TopicName));
+    }
+
+    [Fact]
+    public async Task GetQuestions_WhenExceptionOccurs_ReturnsInternalServerError()
+    {
+        // Arrange
+        _mockRepository.Setup(repo => repo.GetAllAsync(It.IsAny<LogContext>()))
+            .ThrowsAsync(new Exception("Test exception"));
+
+        // Act
+        var result = await _controller.GetQuestions();
+
+        // Assert
+        var statusCodeResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, statusCodeResult.StatusCode);
+        Assert.Equal("An error occurred while retrieving questions", statusCodeResult.Value);
     }
 
     [Fact]
     public async Task GetQuestion_WithValidId_ReturnsOkResult_WithQuestion()
     {
         // Arrange
-        var question = new Question { ID = 1, QuestionText = "Test Question", TopicID = 1 };
-        _mockRepository.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(question);
+        var question = new Question { 
+            ID = 1, 
+            QuestionText = "Test Question", 
+            TopicID = 1,
+            Topic = new Topic { TopicName = "Test Topic" },
+            DifficultyLevel = 3,
+            MaxScore = 5,
+            GeneratedBy = QuestionSource.AI,
+            QuestionSourceReference = "https://test.com"
+        };
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(question);
 
         // Act
         var result = await _controller.GetQuestion(1);
@@ -60,13 +85,19 @@ public class QuestionsControllerTests
         var returnedQuestion = Assert.IsType<QuestionDto>(okResult.Value);
         Assert.Equal(1, returnedQuestion.ID);
         Assert.Equal("Test Question", returnedQuestion.QuestionText);
+        Assert.Equal("Test Topic", returnedQuestion.TopicName);
+        Assert.Equal(3, returnedQuestion.DifficultyLevel);
+        Assert.Equal(5, returnedQuestion.MaxScore);
+        Assert.Equal(QuestionSource.AI, returnedQuestion.GeneratedBy);
+        Assert.Equal("https://test.com", returnedQuestion.QuestionSourceReference);
     }
 
     [Fact]
     public async Task GetQuestion_WithInvalidId_ReturnsNotFound()
     {
         // Arrange
-        _mockRepository.Setup(repo => repo.GetByIdAsync(1)).ThrowsAsync(new QuestionNotFoundException(1));
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1))
+            .ThrowsAsync(new QuestionNotFoundException(1));
 
         // Act
         var result = await _controller.GetQuestion(1);
@@ -86,11 +117,20 @@ public class QuestionsControllerTests
             TopicID = 1,
             DifficultyLevel = 1,
             MaxScore = 10,
-            GeneratedBy = QuestionSource.AI
+            GeneratedBy = QuestionSource.AI,
+            QuestionSourceReference = "https://test.com"
         };
-        var question = new Question { ID = 1, QuestionText = "New Question", TopicID = 1 };
-        _mockRepository.Setup(repo => repo.TopicExistsAsync(1)).ReturnsAsync(true);
-        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<Question>())).ReturnsAsync(question);
+        var question = new Question { 
+            ID = 1, 
+            QuestionText = createDto.QuestionText, 
+            TopicID = createDto.TopicID,
+            DifficultyLevel = createDto.DifficultyLevel,
+            MaxScore = createDto.MaxScore,
+            GeneratedBy = createDto.GeneratedBy,
+            QuestionSourceReference = createDto.QuestionSourceReference
+        };
+        _mockRepository.Setup(repo => repo.TopicExistsAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(true);
+        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), It.IsAny<Question>())).ReturnsAsync(question);
 
         // Act
         var result = await _controller.CreateQuestion(createDto);
@@ -100,6 +140,9 @@ public class QuestionsControllerTests
         var returnedQuestion = Assert.IsType<QuestionDto>(createdResult.Value);
         Assert.Equal(1, returnedQuestion.ID);
         Assert.Equal("New Question", returnedQuestion.QuestionText);
+        Assert.Equal(10, returnedQuestion.MaxScore);
+        Assert.Equal(QuestionSource.AI, returnedQuestion.GeneratedBy);
+        Assert.Equal("https://test.com", returnedQuestion.QuestionSourceReference);
     }
 
     [Fact]
@@ -107,7 +150,7 @@ public class QuestionsControllerTests
     {
         // Arrange
         var createDto = new CreateQuestionDto { TopicID = 1 };
-        _mockRepository.Setup(repo => repo.TopicExistsAsync(1)).ReturnsAsync(false);
+        _mockRepository.Setup(repo => repo.TopicExistsAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(false);
 
         // Act
         var result = await _controller.CreateQuestion(createDto);
@@ -127,10 +170,11 @@ public class QuestionsControllerTests
             TopicID = 1,
             DifficultyLevel = 2,
             MaxScore = 15,
-            GeneratedBy = QuestionSource.Imported
+            GeneratedBy = QuestionSource.AI,
+            QuestionSourceReference = "https://test.com"
         };
-        _mockRepository.Setup(repo => repo.TopicExistsAsync(1)).ReturnsAsync(true);
-        _mockRepository.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(new Question { ID = 1 });
+        _mockRepository.Setup(repo => repo.TopicExistsAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(true);
+        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<Question>())).ReturnsAsync(new Question());
 
         // Act
         var result = await _controller.UpdateQuestion(1, updateDto);
@@ -144,8 +188,8 @@ public class QuestionsControllerTests
     {
         // Arrange
         var updateDto = new UpdateQuestionDto { TopicID = 1 };
-        _mockRepository.Setup(repo => repo.TopicExistsAsync(1)).ReturnsAsync(true);
-        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<Question>()))
+        _mockRepository.Setup(repo => repo.TopicExistsAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(true);
+        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<Question>()))
             .ThrowsAsync(new QuestionNotFoundException(1));
 
         // Act
@@ -160,7 +204,7 @@ public class QuestionsControllerTests
     public async Task DeleteQuestion_WithValidId_ReturnsNoContent()
     {
         // Arrange
-        _mockRepository.Setup(repo => repo.DeleteAsync(1)).Returns(Task.CompletedTask);
+        _mockRepository.Setup(repo => repo.DeleteAsync(It.IsAny<LogContext>(), 1)).Returns(Task.CompletedTask);
 
         // Act
         var result = await _controller.DeleteQuestion(1);
@@ -173,7 +217,7 @@ public class QuestionsControllerTests
     public async Task DeleteQuestion_WithInvalidId_ReturnsNotFound()
     {
         // Arrange
-        _mockRepository.Setup(repo => repo.DeleteAsync(1))
+        _mockRepository.Setup(repo => repo.DeleteAsync(It.IsAny<LogContext>(), 1))
             .ThrowsAsync(new QuestionNotFoundException(1));
 
         // Act
@@ -185,33 +229,7 @@ public class QuestionsControllerTests
     }
 
     [Fact]
-    public async Task CreateQuestion_WithValidUrl_ReturnsCreatedAtAction()
-    {
-        // Arrange
-        var createDto = new CreateQuestionDto 
-        { 
-            QuestionText = "Test Question",
-            TopicID = 1,
-            DifficultyLevel = 2,
-            MaxScore = 5,
-            GeneratedBy = QuestionSource.AI,
-            QuestionSourceReference = "https://valid-url.com/reference"
-        };
-        _mockRepository.Setup(repo => repo.TopicExistsAsync(1)).ReturnsAsync(true);
-        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<Question>()))
-            .ReturnsAsync(new Question { ID = 1, QuestionText = createDto.QuestionText });
-
-        // Act
-        var result = await _controller.CreateQuestion(createDto);
-
-        // Assert
-        var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-        var returnedQuestion = Assert.IsType<QuestionDto>(createdAtActionResult.Value);
-        Assert.Equal(createDto.QuestionText, returnedQuestion.QuestionText);
-    }
-
-    [Fact]
-    public async Task CreateQuestion_WithInvalidUrl_ReturnsBadRequest()
+    public async Task CreateQuestion_WithInvalidValidationUrl_ReturnsBadRequest()
     {
         // Arrange
         var createDto = new CreateQuestionDto 
@@ -231,4 +249,4 @@ public class QuestionsControllerTests
         // Assert
         Assert.IsType<BadRequestObjectResult>(result.Result);
     }
-} 
+}
