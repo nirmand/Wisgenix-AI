@@ -150,7 +150,8 @@ public class TopicsControllerTests
         // Arrange
         var updateDto = new UpdateTopicDto { TopicName = "Updated Classes" };
         _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(It.IsAny<LogContext>(),It.IsAny<int>())).ReturnsAsync(true);
-        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 999)).ReturnsAsync((Topic)null);
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 999))
+            .ReturnsAsync((Topic)null!);
 
         // Act
         var result = await _controller.UpdateTopic(999, updateDto);
@@ -283,12 +284,32 @@ public class TopicsControllerTests
     }
 
     [Fact]
+    public async Task UpdateTopic_WithInvalidTopicid_ReturnNotFound()
+    {
+        // Arrange
+        var updateDto = new UpdateTopicDto { TopicName = "Test Topic", SubjectID = 1 };
+        _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(It.IsAny<LogContext>(), 1))
+            .ReturnsAsync(true);
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1))
+            .ReturnsAsync((Topic)null);
+
+        // Act
+        var result = await _controller.UpdateTopic(1, updateDto);
+
+        // Assert
+        Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal($"Topic with ID 1 was not found", ((NotFoundObjectResult)result).Value);
+    }
+
+    [Fact]
     public async Task UpdateTopic_Returns500_WhenExceptionOccurs()
     {
         // Arrange
         var updateDto = new UpdateTopicDto { TopicName = "Test Topic", SubjectID = 1 };
         _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(It.IsAny<LogContext>(), 1))
             .ReturnsAsync(true);
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1))
+            .ReturnsAsync(new Topic());
         _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<Topic>()))
             .ThrowsAsync(new Exception("Test exception"));
 

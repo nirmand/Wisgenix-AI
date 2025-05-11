@@ -231,6 +231,23 @@ public class QuestionOptionsControllerTests
     }
 
     [Fact]
+    public async Task UpdateQuestionOption_WhenNullOptionReturned_ReturnsNotFound()
+    {
+        // Arrange
+        var updateDto = new UpdateQuestionOptionDto { QuestionID = 1 };
+        _mockRepository.Setup(repo => repo.QuestionExistsAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(true);
+        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<QuestionOption>()))
+            .ReturnsAsync((QuestionOption)null!);
+
+        // Act
+        var result = await _controller.UpdateQuestionOption(1, updateDto);
+
+        // Assert
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal("Question option with ID 1 was not found", notFoundResult.Value);
+    }
+
+    [Fact]
     public async Task DeleteQuestionOption_WithValidId_ReturnsNoContent()
     {
         // Arrange

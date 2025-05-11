@@ -138,7 +138,7 @@ public class SubjectsControllerTests
         // Arrange
         var updateDto = new UpdateSubjectDto { SubjectName = "Updated C#" };
         _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 999))
-            .ReturnsAsync((Subject)null);
+            .ReturnsAsync((Subject)null!);
 
         // Act
         var result = await _controller.UpdateSubject(999, updateDto);
@@ -167,14 +167,15 @@ public class SubjectsControllerTests
     {
         // Arrange
         int invalidId = 999;
-        _mockRepository.Setup(repo => repo.DeleteAsync(It.IsAny<LogContext>(), invalidId))
-            .ThrowsAsync(new SubjectNotFoundException(invalidId));
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), invalidId))
+            .ReturnsAsync((Subject)null);
 
         // Act
         var result = await _controller.DeleteSubject(invalidId);
 
         // Assert
         Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal($"Subject with ID {invalidId} was not found", ((NotFoundObjectResult)result).Value);
     }
 
     [Fact]
