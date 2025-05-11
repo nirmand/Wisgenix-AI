@@ -72,7 +72,7 @@ public class TopicsController : ControllerBase
         {
             if (!await _subjectRepository.SubjectExistsAsync(logContext, createTopicDto.SubjectID))
             {
-                _logger.LogOperationWarning<Topic>(logContext, "Subject with ID {SubjectID} does not exist", createTopicDto.SubjectID);
+                _logger.LogOperationWarning<Topic>(logContext, $"Subject with ID {createTopicDto.SubjectID} does not exist");
                 return BadRequest($"Subject with ID {createTopicDto.SubjectID} does not exist");
             }
 

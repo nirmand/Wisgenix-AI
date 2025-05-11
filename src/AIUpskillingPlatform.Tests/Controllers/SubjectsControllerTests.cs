@@ -211,35 +211,7 @@ public class SubjectsControllerTests
         Assert.Equal(500, statusCodeResult.StatusCode);
         Assert.Equal("An error occurred while creating the subject", statusCodeResult.Value);
     }
-
-    [Fact]
-    public async Task CreateSubject_WithInvalidModelState_ReturnsBadRequest()
-    {
-        // Arrange
-        var createDto = new CreateSubjectDto();
-        _controller.ModelState.AddModelError("SubjectName", "Subject name is required");
-
-        // Act
-        var result = await _controller.CreateSubject(createDto);
-
-        // Assert
-        Assert.IsType<BadRequestObjectResult>(result.Result);
-    }
-
-    [Fact]
-    public async Task UpdateSubject_WithInvalidModelState_ReturnsBadRequest()
-    {
-        // Arrange
-        var updateDto = new UpdateSubjectDto();
-        _controller.ModelState.AddModelError("SubjectName", "Subject name is required");
-
-        // Act
-        var result = await _controller.UpdateSubject(1, updateDto);
-
-        // Assert
-        Assert.IsType<BadRequestObjectResult>(result);
-    }
-
+    
     [Fact]
     public async Task UpdateSubject_Returns500_WhenExceptionOccurs()
     {

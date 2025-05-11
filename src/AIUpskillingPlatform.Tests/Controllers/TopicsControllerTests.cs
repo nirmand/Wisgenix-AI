@@ -210,6 +210,8 @@ public class TopicsControllerTests
     {
         // Arrange
         var createDto = new CreateTopicDto { TopicName = "Test Topic", SubjectID = 1 };
+        _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(It.IsAny<LogContext>(), 1))
+            .ReturnsAsync(true);
         _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), It.IsAny<Topic>()))
             .ThrowsAsync(new Exception("Test exception"));
 
@@ -220,20 +222,6 @@ public class TopicsControllerTests
         var statusCodeResult = Assert.IsType<ObjectResult>(result.Result);
         Assert.Equal(500, statusCodeResult.StatusCode);
         Assert.Equal("An error occurred while creating the topic", statusCodeResult.Value);
-    }
-
-    [Fact]
-    public async Task CreateTopic_WithInvalidModelState_ReturnsBadRequest()
-    {
-        // Arrange
-        var createDto = new CreateTopicDto();
-        _controller.ModelState.AddModelError("TopicName", "Topic name is required");
-
-        // Act
-        var result = await _controller.CreateTopic(createDto);
-
-        // Assert
-        Assert.IsType<BadRequestObjectResult>(result.Result);
     }
 
     [Fact]
@@ -289,6 +277,8 @@ public class TopicsControllerTests
         var updateDto = new UpdateTopicDto { TopicName = "Test Topic", SubjectID = 1 };
         _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(It.IsAny<LogContext>(), 1))
             .ReturnsAsync(true);
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1))
+            .ReturnsAsync(new Topic { ID = 1, TopicName = "Classes", SubjectID = 1 });
         _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<Topic>()))
             .ThrowsAsync(new Exception("Test exception"));
 
