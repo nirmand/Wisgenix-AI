@@ -1,0 +1,91 @@
+id: template_standard_flow
+name: Template Standard Flow
+inputs:
+  query:
+    type: string
+    is_chat_input: false
+  mcqs:
+    type: object
+    is_chat_input: false
+  topic_id:
+    type: int
+    is_chat_input: false
+  subject_id:
+    type: int
+    is_chat_input: false
+  coding_questions:
+    type: object
+    is_chat_input: false
+  openended_questions:
+    type: object
+    is_chat_input: false
+  prog_language:
+    type: string
+    default: ""
+    is_chat_input: false
+outputs:
+  Output:
+    type: string
+    reference: ${gptassessment.output}
+nodes:
+- name: ebookslookup
+  type: python
+  source:
+    type: package
+    tool: promptflow_vectordb.tool.common_index_lookup.search
+  inputs:
+    mlindex_content: >
+      embeddings:
+        kind: none
+        schema_version: '2'
+      index:
+        api_version: 2024-05-01-preview
+        connection:
+          id: /subscriptions/333a91a5-e47b-4e8e-8c02-84d230109563/resourceGroups/doshitech-assessment-rg/providers/Microsoft.MachineLearningServices/workspaces/doshitech-assessment-ai-engine/connections/assessmentaisearch
+        connection_type: workspace_connection
+        endpoint: https://assessment-ai-search.search.windows.net/
+        engine: azure-sdk
+        field_mapping:
+          content: content
+          embedding: null
+          metadata: null
+        index: assessment-ai-vector
+        kind: acs
+        semantic_configuration_name: azureml-default
+    queries: ${inputs.query}
+    query_type: Keyword
+    top_k: 3
+  use_variants: false
+- name: output_clear
+  type: python
+  source:
+    type: code
+    path: output_clear.py
+  inputs:
+    input1: ${ebookslookup.output}
+  use_variants: false
+- name: gptassessment
+  type: llm
+  source:
+    type: code
+    path: gptassessment.jinja2
+  inputs:
+    deployment_name: gpt-4.1
+    temperature: 0.3
+    top_p: 1
+    coding_questions: ${inputs.coding_questions}
+    information: ${output_clear.output}
+    language: ${inputs.prog_language}
+    mcq: ${inputs.mcqs}
+    openended_questions: ${inputs.openended_questions}
+    query: ${inputs.query}
+    subject_id: ${inputs.subject_id}
+    topic_id: ${inputs.topic_id}
+  provider: AzureOpenAI
+  connection: nirmamado2m9jeastus2_aoai
+  api: chat
+  module: promptflow.tools.aoai
+  use_variants: false
+node_variants: {}
+environment:
+  python_requirements_txt: requirements.txt
