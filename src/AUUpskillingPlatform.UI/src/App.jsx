@@ -7,10 +7,13 @@ import Subjects from "./Subjects"
 import Questions from "./Questions"
 import "./App.css"
 
+import { useNavigate } from "react-router-dom"
+
 function App() {
+  const navigate = useNavigate()
   return (
     <Router>
-      <Navigation onNavigate={() => {}} />
+      <Navigation onNavigate={(path) => navigate(path)} />
       <main>
         <Routes>
           <Route path="/" element={<Home />} />

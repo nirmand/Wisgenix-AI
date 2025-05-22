@@ -62,7 +62,7 @@ const Topics = () => {
                   style={{ padding: "0.4rem", marginRight: "0.5rem" }}
                 />
                 <button onClick={() => handleEditSave(topic.id)} style={{ marginRight: "0.5rem" }}>Save</button>
-                <button onClick={() => setEditId(null)}>Cancel</button>
+                <button onClick={() => { setEditId(null); setEditValue(""); }}>Cancel</button>
               </>
             ) : (
               <>
