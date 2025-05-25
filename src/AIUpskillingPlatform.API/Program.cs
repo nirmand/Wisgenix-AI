@@ -129,5 +129,10 @@ app.UseRouting();
 app.UseMiddleware<ValidationLoggingMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
+app.UseCors(builder =>
+    builder
+        .AllowAnyOrigin()
+        .AllowAnyMethod()
+        .AllowAnyHeader());
 
 app.Run();

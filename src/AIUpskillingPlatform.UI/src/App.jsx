@@ -11,18 +11,13 @@ import { useNavigate } from "react-router-dom"
 
 function App() {
   const navigate = useNavigate()
-  return (
-    <Router>
-      <Navigation onNavigate={(path) => navigate(path)} />
-      <main>
+  return (    
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/topics" element={<Topics />} />
           <Route path="/subjects" element={<Subjects />} />
           <Route path="/questions" element={<Questions />} />
-        </Routes>
-      </main>
-    </Router>
+        </Routes>     
   )
 }
 
