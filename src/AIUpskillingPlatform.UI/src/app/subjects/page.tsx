@@ -11,11 +11,18 @@ interface Subject {
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
 const SubjectsPage: React.FC = () => {
+  const pageKey = typeof window !== "undefined" ? window.location.pathname + "_pageSize" : "subjects_pageSize";
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(pageKey);
+      return stored ? Number(stored) : 10;
+    }
+    return 10;
+  });
   const [showModal, setShowModal] = useState(false);
   const [editSubject, setEditSubject] = useState<null | Subject>(null);
   const [subjectName, setSubjectName] = useState("");
@@ -23,6 +30,13 @@ const SubjectsPage: React.FC = () => {
 
   const totalPages = Math.ceil(subjects.length / pageSize);
   const pagedSubjects = subjects.slice((page - 1) * pageSize, page * pageSize);
+
+  // Persist pageSize to localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(pageKey, String(pageSize));
+    }
+  }, [pageSize, pageKey]);
 
   // Fetch subjects from API
   useEffect(() => {
