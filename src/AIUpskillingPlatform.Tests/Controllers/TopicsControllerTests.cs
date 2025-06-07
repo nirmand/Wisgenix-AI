@@ -306,4 +306,44 @@ public class TopicsControllerTests
         Assert.Equal(500, statusCodeResult.StatusCode);
         Assert.Equal("An error occurred while deleting the topic", statusCodeResult.Value);
     }
+
+    [Fact]
+    public async Task GetTopicsBySubject_ReturnsOkResult_WithTopics()
+    {
+        // Arrange
+        var subjectId = 1;
+        var topics = new List<Topic>
+        {
+            new() { ID = 1, TopicName = "T1", SubjectID = subjectId },
+            new() { ID = 2, TopicName = "T2", SubjectID = subjectId }
+        };
+        _mockRepository.Setup(r => r.GetBySubjectIdAsync(It.IsAny<LogContext>(), subjectId)).ReturnsAsync(topics);
+        _mapper.Setup(m => m.Map<IEnumerable<TopicDto>>(It.IsAny<IEnumerable<Topic>>()))
+            .Returns((IEnumerable<Topic> src) => src.Select(t => new TopicDto { ID = t.ID, TopicName = t.TopicName, SubjectID = t.SubjectID }));
+
+        // Act
+        var result = await _controller.GetTopicsBySubject(subjectId);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedTopics = Assert.IsAssignableFrom<IEnumerable<TopicDto>>(okResult.Value);
+        Assert.Equal(2, returnedTopics.Count());
+        Assert.All(returnedTopics, t => Assert.Equal(subjectId, t.SubjectID));
+    }
+
+    [Fact]
+    public async Task GetTopicsBySubject_WhenException_Returns500()
+    {
+        // Arrange
+        var subjectId = 1;
+        _mockRepository.Setup(r => r.GetBySubjectIdAsync(It.IsAny<LogContext>(), subjectId)).ThrowsAsync(new System.Exception("fail"));
+
+        // Act
+        var result = await _controller.GetTopicsBySubject(subjectId);
+
+        // Assert
+        var statusResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, statusResult.StatusCode);
+        Assert.Equal("An error occurred while retrieving topics by subject", statusResult.Value);
+    }
 }

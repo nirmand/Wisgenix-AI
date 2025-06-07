@@ -389,4 +389,42 @@ public class QuestionsControllerTests
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
         Assert.Equal("Topic with ID 1 does not exist", badRequestResult.Value);
     }
+
+    [Fact]
+    public async Task GetQuestionsByTopic_ReturnsOkResult_WithQuestions()
+    {
+        // Arrange
+        var topicId = 1;
+        var questions = new List<Question>
+        {
+            new() { ID = 1, QuestionText = "Q1", TopicID = topicId, Topic = new Topic { TopicName = "Topic1" } },
+            new() { ID = 2, QuestionText = "Q2", TopicID = topicId, Topic = new Topic { TopicName = "Topic1" } }
+        };
+        _mockRepository.Setup(r => r.GetByTopicIdAsync(It.IsAny<LogContext>(), topicId)).ReturnsAsync(questions);
+
+        // Act
+        var result = await _controller.GetQuestionsByTopic(topicId);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedQuestions = Assert.IsAssignableFrom<IEnumerable<QuestionDto>>(okResult.Value);
+        Assert.Equal(2, returnedQuestions.Count());
+        Assert.All(returnedQuestions, q => Assert.Equal(topicId, q.TopicID));
+    }
+
+    [Fact]
+    public async Task GetQuestionsByTopic_WhenException_Returns500()
+    {
+        // Arrange
+        var topicId = 1;
+        _mockRepository.Setup(r => r.GetByTopicIdAsync(It.IsAny<LogContext>(), topicId)).ThrowsAsync(new System.Exception("fail"));
+
+        // Act
+        var result = await _controller.GetQuestionsByTopic(topicId);
+
+        // Assert
+        var statusResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, statusResult.StatusCode);
+        Assert.Equal("An error occurred while retrieving questions by topic", statusResult.Value);
+    }
 }
