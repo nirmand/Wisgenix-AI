@@ -79,9 +79,9 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Wisgenix API",
+        Title = "WisGenix API",
         Version = "v1",
-        Description = "API documentation for Wisgenix."
+        Description = "API documentation for WisGenix."
     });
 });
 

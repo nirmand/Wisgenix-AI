@@ -16,9 +16,9 @@ const Header: React.FC = () => {
         <div className="flex items-center gap-4">
           <a href="/" className="flex items-center gap-2 group focus:outline-none">
             <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-tr from-indigo-400 via-purple-400 to-pink-400 text-white font-bold text-xl shadow-md select-none group-hover:scale-105 transition-transform">
-              <span>A</span>
+              <span>WG</span>
             </div>
-            <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600 tracking-tight select-none ml-2 group-hover:underline">AIUpskill Admin</span>
+            <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600 tracking-tight select-none ml-2 group-hover:underline">WisGenix Admin</span>
           </a>
           <nav className="hidden md:flex gap-2 ml-6">
             {navLinks.map((link) => (
