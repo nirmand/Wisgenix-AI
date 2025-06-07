@@ -1,0 +1,58 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wisgenix.Data", "Wisgenix.Data\Wisgenix.Data.csproj", "{2EC98017-3DBC-473C-A434-C350CC3E0970}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wisgenix.API", "Wisgenix.API\Wisgenix.API.csproj", "{B97CFEEE-7C9D-40E4-AB8D-FD1101ACE9E3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wisgenix.Common", "Wisgenix.Common\Wisgenix.Common.csproj", "{8E0291C9-7FAD-4FB6-B5FC-E1806294DBFA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wisgenix.Repositories", "Wisgenix.Repositories\Wisgenix.Repositories.csproj", "{87129CC7-8BDC-4526-80B2-41698E44A5AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wisgenix.API.Tests", "Wisgenix.Tests\Wisgenix.API.Tests.csproj", "{3DA76097-EC2A-45D9-8BB1-73A342A10BD4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wisgenix.Core", "Wisgenix.Core\Wisgenix.Core.csproj", "{27097B15-0C8C-4139-B7C5-684247EE14B1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wisgenix.DTO", "Wisgenix.DTO\Wisgenix.DTO.csproj", "{871A6779-4385-4C8C-8946-B4B02C2E9DC6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2EC98017-3DBC-473C-A434-C350CC3E0970}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2EC98017-3DBC-473C-A434-C350CC3E0970}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2EC98017-3DBC-473C-A434-C350CC3E0970}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2EC98017-3DBC-473C-A434-C350CC3E0970}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B97CFEEE-7C9D-40E4-AB8D-FD1101ACE9E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B97CFEEE-7C9D-40E4-AB8D-FD1101ACE9E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B97CFEEE-7C9D-40E4-AB8D-FD1101ACE9E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B97CFEEE-7C9D-40E4-AB8D-FD1101ACE9E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E0291C9-7FAD-4FB6-B5FC-E1806294DBFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E0291C9-7FAD-4FB6-B5FC-E1806294DBFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E0291C9-7FAD-4FB6-B5FC-E1806294DBFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E0291C9-7FAD-4FB6-B5FC-E1806294DBFA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{87129CC7-8BDC-4526-80B2-41698E44A5AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87129CC7-8BDC-4526-80B2-41698E44A5AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87129CC7-8BDC-4526-80B2-41698E44A5AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87129CC7-8BDC-4526-80B2-41698E44A5AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3DA76097-EC2A-45D9-8BB1-73A342A10BD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DA76097-EC2A-45D9-8BB1-73A342A10BD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DA76097-EC2A-45D9-8BB1-73A342A10BD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DA76097-EC2A-45D9-8BB1-73A342A10BD4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27097B15-0C8C-4139-B7C5-684247EE14B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27097B15-0C8C-4139-B7C5-684247EE14B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27097B15-0C8C-4139-B7C5-684247EE14B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27097B15-0C8C-4139-B7C5-684247EE14B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{871A6779-4385-4C8C-8946-B4B02C2E9DC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{871A6779-4385-4C8C-8946-B4B02C2E9DC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{871A6779-4385-4C8C-8946-B4B02C2E9DC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{871A6779-4385-4C8C-8946-B4B02C2E9DC6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

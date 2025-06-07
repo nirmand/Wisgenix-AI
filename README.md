@@ -7,9 +7,9 @@ Notes:
 Entity Framework migration commands:
 
 ```
-dotnet ef migrations add InitialCreate --project AIUpskillingPlatform.Data --startup-project AIUpskillingPlatform.API
-dotnet ef database update --project AIUpskillingPlatform.Data --startup-project AIUpskillingPlatform.API
-dotnet ef migrations add Migration-2103251900 --project AIUpskillingPlatform.Data --startup-project AIUpskillingPlatform.API
+dotnet ef migrations add InitialCreate --project Wisgenix.Data --startup-project Wisgenix.API
+dotnet ef database update --project Wisgenix.Data --startup-project Wisgenix.API
+dotnet ef migrations add Migration-2103251900 --project Wisgenix.Data --startup-project Wisgenix.API
 ```
 
 

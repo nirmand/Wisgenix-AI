@@ -17,7 +17,7 @@ Include subtle hover effects and transition animations for a polished feel.
 Implement a sticky header with navigation and a search icon.
 
 Technical Details:
-This React app needs to be created in "E:\Workspace\AIUpskillingPlatform\src\AIUpskillingPlatform.UI" folder.
+This React app needs to be created in "E:\Workspace\Wisgenix\src\Wisgenix.UI" folder.
 Utilize Next.js for server-side rendering (SSR) or static site generation (SSG) where appropriate (e.g., subjects listing).
 Use Tailwind CSS for all styling.
 Integrate with the provided ASP.NET Core Web API endpoints. "https://localhost:7118/" is for development environment whereas also keep provision for QA and production environments with the help of configurations so there shouldnt be any code changes required.

@@ -8,8 +8,8 @@
             "name": "Launch AIUpskllingPlatform.API",
             "type": "coreclr",
             "request": "launch",
-            "program": "${workspaceFolder}/AIUpskillingPlatform.API/bin/Debug/net9.0/AIUpskillingPlatform.API.dll",
-            "cwd": "${workspaceFolder}/AIUpskillingPlatform.API",
+            "program": "${workspaceFolder}/Wisgenix.API/bin/Debug/net9.0/Wisgenix.API.dll",
+            "cwd": "${workspaceFolder}/Wisgenix.API",
             "stopAtEntry": false,
             "serverReadyAction": {
                 "action": "openExternally",
