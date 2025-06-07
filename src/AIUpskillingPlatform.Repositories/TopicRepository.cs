@@ -93,4 +93,15 @@ public class TopicRepository : BaseRepository<Topic>, ITopicRepository
             $"Checking if subject exists with ID: {subjectId}",
             async () => await Context.Subjects.AnyAsync(s => s.ID == subjectId));
     }
+
+    public async Task<IEnumerable<Topic>> GetBySubjectIdAsync(LogContext logContext, int subjectId)
+    {
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Retrieving topics for subject ID: {subjectId}",
+            async () => await Context.Topics
+                .Where(t => t.SubjectID == subjectId)
+                .ToListAsync(),
+            results => $"Successfully retrieved {results.Count()} topics for subject ID: {subjectId}");
+    }
 }

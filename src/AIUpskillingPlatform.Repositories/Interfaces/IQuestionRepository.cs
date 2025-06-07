@@ -11,4 +11,5 @@ public interface IQuestionRepository
     Task<Question> UpdateAsync(LogContext logContext, Question question);
     Task DeleteAsync(LogContext logContext, int id);
     Task<bool> TopicExistsAsync(LogContext logContext, int topicId);
+    Task<IEnumerable<Question>> GetByTopicIdAsync(LogContext logContext, int topicId);
 }

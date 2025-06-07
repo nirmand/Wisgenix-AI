@@ -178,4 +178,31 @@ public class QuestionsController : ControllerBase
             return StatusCode(500, "An error occurred while deleting the question");
         }
     }
+
+    [HttpGet("questions-by-topic/{topicId}")]
+    public async Task<ActionResult<IEnumerable<QuestionDto>>> GetQuestionsByTopic(int topicId)
+    {
+        var logContext = new LogContext();
+        try
+        {
+            var questions = await _questionRepository.GetByTopicIdAsync(logContext, topicId);
+            var questionDtos = questions.Select(q => new QuestionDto
+            {
+                ID = q.ID,
+                QuestionText = q.QuestionText,
+                TopicID = q.TopicID,
+                DifficultyLevel = q.DifficultyLevel,
+                MaxScore = q.MaxScore,
+                GeneratedBy = q.GeneratedBy,
+                TopicName = q.Topic?.TopicName ?? string.Empty,
+                QuestionSourceReference = q.QuestionSourceReference
+            });
+            return Ok(questionDtos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogOperationError<Subject>(logContext, ex, $"Error occurred while getting questions for topic {topicId}");
+            return StatusCode(500, "An error occurred while retrieving questions by topic");
+        }
+    }
 }

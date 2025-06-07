@@ -142,4 +142,21 @@ public class TopicsController : ControllerBase
             return StatusCode(500, "An error occurred while deleting the topic");
         }
     }
+
+    [HttpGet("topics-by-subject/{subjectId}")]
+    public async Task<ActionResult<IEnumerable<TopicDto>>> GetTopicsBySubject(int subjectId)
+    {
+        LogContext logContext = LogContext.Create("GetTopicsBySubject");
+        try
+        {
+            var topics = await _topicRepository.GetBySubjectIdAsync(logContext, subjectId);
+            var topicDtos = _mapper.Map<IEnumerable<TopicDto>>(topics);
+            return Ok(topicDtos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogOperationError<Topic>(logContext, ex, $"Error occurred while getting topics for subject {subjectId}");
+            return StatusCode(500, "An error occurred while retrieving topics by subject");
+        }
+    }
 }
