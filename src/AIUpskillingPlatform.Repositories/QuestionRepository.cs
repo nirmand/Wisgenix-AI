@@ -95,4 +95,16 @@ public class QuestionRepository : BaseRepository<Question>, IQuestionRepository
             $"Checking if topic exists with ID: {topicId}",
             async () => await Context.Topics.AnyAsync(t => t.ID == topicId));
     }
+
+    public async Task<IEnumerable<Question>> GetByTopicIdAsync(LogContext logContext, int topicId)
+    {
+        return await ExecuteWithLoggingAsync(
+            logContext,
+            $"Retrieving questions for topic ID: {topicId}",
+            async () => await Context.Questions
+                .Include(q => q.Topic)
+                .Where(q => q.TopicID == topicId)
+                .ToListAsync(),
+            results => $"Successfully retrieved {results.Count()} questions for topic ID: {topicId}");
+    }
 }

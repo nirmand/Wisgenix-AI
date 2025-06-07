@@ -62,7 +62,7 @@ public class QuestionOptionsController : ControllerBase
         }
     }
 
-    [HttpGet("options-for-question/{questionId}")]
+    [HttpGet("options-by-question/{questionId}")]
     public async Task<ActionResult<IEnumerable<QuestionOptionDto>>> GetOptionsByQuestion(int questionId)
     {
         var logContext = LogContext.Create("GetOptionsByQuestion");

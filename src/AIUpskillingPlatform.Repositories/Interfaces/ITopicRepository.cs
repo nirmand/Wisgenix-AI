@@ -11,4 +11,5 @@ public interface ITopicRepository
     Task<Topic> UpdateAsync(LogContext logContext, Topic topic);
     Task DeleteAsync(LogContext logContext, int id);
     Task<bool> SubjectExistsAsync(LogContext logContext, int subjectId);
-} 
+    Task<IEnumerable<Topic>> GetBySubjectIdAsync(LogContext logContext, int subjectId);
+}
