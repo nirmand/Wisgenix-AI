@@ -24,9 +24,7 @@ public class QuestionsControllerTests
         _mockRepository = new Mock<IQuestionRepository>();
         _mockLogger = new Mock<ILoggingService>();
         _mockMapper = new Mock<IMapper>();
-        _controller = new QuestionsController(_mockRepository.Object, _mockLogger.Object);
-
-        // Setup default mappings for _mockMapper if needed in future
+        _controller = new QuestionsController(_mockRepository.Object, _mockLogger.Object, _mockMapper.Object);
     }
 
     [Fact]
@@ -38,7 +36,13 @@ public class QuestionsControllerTests
             new() { ID = 1, QuestionText = "Test Question 1", TopicID = 1, Topic = new Topic { TopicName = "Test Topic" } },
             new() { ID = 2, QuestionText = "Test Question 2", TopicID = 1, Topic = new Topic { TopicName = "Test Topic" } }
         };
+        var questionDtos = new List<QuestionDto>
+        {
+            new() { ID = 1, QuestionText = "Test Question 1", TopicID = 1, TopicName = "Test Topic" },
+            new() { ID = 2, QuestionText = "Test Question 2", TopicID = 1, TopicName = "Test Topic" }
+        };
         _mockRepository.Setup(repo => repo.GetAllAsync(It.IsAny<LogContext>())).ReturnsAsync(questions);
+        _mockMapper.Setup(m => m.Map<IEnumerable<QuestionDto>>(questions)).Returns(questionDtos);
 
         // Act
         var result = await _controller.GetQuestions();
@@ -70,9 +74,9 @@ public class QuestionsControllerTests
     public async Task GetQuestion_WithValidId_ReturnsOkResult_WithQuestion()
     {
         // Arrange
-        var question = new Question { 
-            ID = 1, 
-            QuestionText = "Test Question", 
+        var question = new Question {
+            ID = 1,
+            QuestionText = "Test Question",
             TopicID = 1,
             Topic = new Topic { TopicName = "Test Topic" },
             DifficultyLevel = 3,
@@ -80,7 +84,18 @@ public class QuestionsControllerTests
             GeneratedBy = QuestionSource.AI,
             QuestionSourceReference = "https://test.com"
         };
+        var questionDto = new QuestionDto {
+            ID = 1,
+            QuestionText = "Test Question",
+            TopicID = 1,
+            TopicName = "Test Topic",
+            DifficultyLevel = 3,
+            MaxScore = 5,
+            GeneratedBy = QuestionSource.AI,
+            QuestionSourceReference = "https://test.com"
+        };
         _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(question);
+        _mockMapper.Setup(m => m.Map<QuestionDto>(question)).Returns(questionDto);
 
         // Act
         var result = await _controller.GetQuestion(1);
@@ -119,6 +134,14 @@ public class QuestionsControllerTests
         var now = DateTime.UtcNow;
         var userName = "testuser";
         var createDto = new CreateQuestionDto { QuestionText = "What is C#?", TopicID = 1, DifficultyLevel = 1, MaxScore = 5, GeneratedBy = Wisgenix.Common.QuestionSource.User };
+        var question = new Question {
+            QuestionText = createDto.QuestionText,
+            TopicID = createDto.TopicID,
+            DifficultyLevel = createDto.DifficultyLevel,
+            MaxScore = createDto.MaxScore,
+            GeneratedBy = createDto.GeneratedBy,
+            QuestionSourceReference = createDto.QuestionSourceReference
+        };
         var createdQuestion = new Question {
             ID = 1,
             QuestionText = "What is C#?",
@@ -131,7 +154,21 @@ public class QuestionsControllerTests
             ModifiedDate = null,
             ModifiedBy = null
         };
-        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), It.IsAny<Question>())).ReturnsAsync(createdQuestion);
+        var questionDto = new QuestionDto {
+            ID = 1,
+            QuestionText = "What is C#?",
+            TopicID = 1,
+            DifficultyLevel = 1,
+            MaxScore = 5,
+            GeneratedBy = Wisgenix.Common.QuestionSource.User,
+            CreatedDate = now,
+            CreatedBy = userName,
+            ModifiedDate = null,
+            ModifiedBy = null
+        };
+        _mockMapper.Setup(m => m.Map<Question>(createDto)).Returns(question);
+        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), question)).ReturnsAsync(createdQuestion);
+        _mockMapper.Setup(m => m.Map<QuestionDto>(createdQuestion)).Returns(questionDto);
 
         // Act
         var result = await _controller.CreateQuestion(createDto);
@@ -168,6 +205,15 @@ public class QuestionsControllerTests
         var now = DateTime.UtcNow;
         var userName = "testuser";
         var updateDto = new UpdateQuestionDto { QuestionText = "Updated Q?", TopicID = 1, DifficultyLevel = 2, MaxScore = 10, GeneratedBy = Wisgenix.Common.QuestionSource.User };
+        var question = new Question {
+            ID = 1,
+            QuestionText = updateDto.QuestionText,
+            TopicID = updateDto.TopicID,
+            DifficultyLevel = updateDto.DifficultyLevel,
+            MaxScore = updateDto.MaxScore,
+            GeneratedBy = updateDto.GeneratedBy,
+            QuestionSourceReference = updateDto.QuestionSourceReference
+        };
         var existingQuestion = new Question {
             ID = 1,
             QuestionText = "What is C#?",
@@ -192,15 +238,16 @@ public class QuestionsControllerTests
             ModifiedDate = now,
             ModifiedBy = userName
         };
+        _mockMapper.Setup(m => m.Map<Question>(updateDto)).Returns(question);
         _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(existingQuestion);
-        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<Question>())).ReturnsAsync(updatedQuestion);
+        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), question)).ReturnsAsync(updatedQuestion);
 
         // Act
         var result = await _controller.UpdateQuestion(1, updateDto);
 
         // Assert
         Assert.IsType<NoContentResult>(result);
-        _mockRepository.Verify(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<Question>()), Times.Once);
+        _mockRepository.Verify(repo => repo.UpdateAsync(It.IsAny<LogContext>(), question), Times.Once);
         Assert.Equal(now, updatedQuestion.ModifiedDate);
         Assert.Equal(userName, updatedQuestion.ModifiedBy);
     }
