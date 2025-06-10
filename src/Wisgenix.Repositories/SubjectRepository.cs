@@ -39,6 +39,10 @@ namespace Wisgenix.Repositories
 
         public async Task<Subject> CreateAsync(LogContext logContext, Subject subject)
         {
+            subject.CreatedDate = DateTime.UtcNow;
+            subject.CreatedBy = logContext.UserName ?? "system";
+            subject.ModifiedDate = null;
+            subject.ModifiedBy = null;
             return await ExecuteWithLoggingAsync(
                 logContext,
                 $"Creating new subject",
@@ -64,6 +68,8 @@ namespace Wisgenix.Repositories
                         throw new SubjectNotFoundException(subject.ID);
                     }
                     Context.Entry(existingSubject).CurrentValues.SetValues(subject);
+                    existingSubject.ModifiedDate = DateTime.UtcNow;
+                    existingSubject.ModifiedBy = logContext.UserName ?? "system";
                     await Context.SaveChangesAsync();
                     return existingSubject;
                 },

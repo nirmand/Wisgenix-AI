@@ -8,6 +8,7 @@ using Wisgenix.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Xunit;
+using AutoMapper;
 
 namespace Wisgenix.Tests.Controllers;
 
@@ -15,13 +16,17 @@ public class QuestionsControllerTests
 {
     private readonly Mock<IQuestionRepository> _mockRepository;
     private readonly Mock<ILoggingService> _mockLogger;
+    private readonly Mock<IMapper> _mockMapper;
     private readonly QuestionsController _controller;
 
     public QuestionsControllerTests()
     {
         _mockRepository = new Mock<IQuestionRepository>();
         _mockLogger = new Mock<ILoggingService>();
+        _mockMapper = new Mock<IMapper>();
         _controller = new QuestionsController(_mockRepository.Object, _mockLogger.Object);
+
+        // Setup default mappings for _mockMapper if needed in future
     }
 
     [Fact]
@@ -111,38 +116,34 @@ public class QuestionsControllerTests
     public async Task CreateQuestion_WithValidData_ReturnsCreatedAtAction()
     {
         // Arrange
-        var createDto = new CreateQuestionDto
-        {
-            QuestionText = "New Question",
+        var now = DateTime.UtcNow;
+        var userName = "testuser";
+        var createDto = new CreateQuestionDto { QuestionText = "What is C#?", TopicID = 1, DifficultyLevel = 1, MaxScore = 5, GeneratedBy = Wisgenix.Common.QuestionSource.User };
+        var createdQuestion = new Question {
+            ID = 1,
+            QuestionText = "What is C#?",
             TopicID = 1,
             DifficultyLevel = 1,
-            MaxScore = 10,
-            GeneratedBy = QuestionSource.AI,
-            QuestionSourceReference = "https://test.com"
+            MaxScore = 5,
+            GeneratedBy = Wisgenix.Common.QuestionSource.User,
+            CreatedDate = now,
+            CreatedBy = userName,
+            ModifiedDate = null,
+            ModifiedBy = null
         };
-        var question = new Question { 
-            ID = 1, 
-            QuestionText = createDto.QuestionText, 
-            TopicID = createDto.TopicID,
-            DifficultyLevel = createDto.DifficultyLevel,
-            MaxScore = createDto.MaxScore,
-            GeneratedBy = createDto.GeneratedBy,
-            QuestionSourceReference = createDto.QuestionSourceReference
-        };
-        _mockRepository.Setup(repo => repo.TopicExistsAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(true);
-        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), It.IsAny<Question>())).ReturnsAsync(question);
+        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), It.IsAny<Question>())).ReturnsAsync(createdQuestion);
 
         // Act
         var result = await _controller.CreateQuestion(createDto);
 
         // Assert
-        var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-        var returnedQuestion = Assert.IsType<QuestionDto>(createdResult.Value);
-        Assert.Equal(1, returnedQuestion.ID);
-        Assert.Equal("New Question", returnedQuestion.QuestionText);
-        Assert.Equal(10, returnedQuestion.MaxScore);
-        Assert.Equal(QuestionSource.AI, returnedQuestion.GeneratedBy);
-        Assert.Equal("https://test.com", returnedQuestion.QuestionSourceReference);
+        var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+        var returnedQuestion = Assert.IsType<QuestionDto>(createdAtActionResult.Value);
+        Assert.Equal(createDto.QuestionText, returnedQuestion.QuestionText);
+        Assert.Equal(now, returnedQuestion.CreatedDate);
+        Assert.Equal(userName, returnedQuestion.CreatedBy);
+        Assert.Null(returnedQuestion.ModifiedDate);
+        Assert.Null(returnedQuestion.ModifiedBy);
     }
 
     [Fact]
@@ -164,23 +165,44 @@ public class QuestionsControllerTests
     public async Task UpdateQuestion_WithValidData_ReturnsNoContent()
     {
         // Arrange
-        var updateDto = new UpdateQuestionDto
-        {
-            QuestionText = "Updated Question",
+        var now = DateTime.UtcNow;
+        var userName = "testuser";
+        var updateDto = new UpdateQuestionDto { QuestionText = "Updated Q?", TopicID = 1, DifficultyLevel = 2, MaxScore = 10, GeneratedBy = Wisgenix.Common.QuestionSource.User };
+        var existingQuestion = new Question {
+            ID = 1,
+            QuestionText = "What is C#?",
+            TopicID = 1,
+            DifficultyLevel = 1,
+            MaxScore = 5,
+            GeneratedBy = Wisgenix.Common.QuestionSource.User,
+            CreatedDate = now.AddDays(-1),
+            CreatedBy = userName,
+            ModifiedDate = null,
+            ModifiedBy = null
+        };
+        var updatedQuestion = new Question {
+            ID = 1,
+            QuestionText = "Updated Q?",
             TopicID = 1,
             DifficultyLevel = 2,
-            MaxScore = 15,
-            GeneratedBy = QuestionSource.AI,
-            QuestionSourceReference = "https://test.com"
+            MaxScore = 10,
+            GeneratedBy = Wisgenix.Common.QuestionSource.User,
+            CreatedDate = now.AddDays(-1),
+            CreatedBy = userName,
+            ModifiedDate = now,
+            ModifiedBy = userName
         };
-        _mockRepository.Setup(repo => repo.TopicExistsAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(true);
-        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<Question>())).ReturnsAsync(new Question());
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(existingQuestion);
+        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<Question>())).ReturnsAsync(updatedQuestion);
 
         // Act
         var result = await _controller.UpdateQuestion(1, updateDto);
 
         // Assert
         Assert.IsType<NoContentResult>(result);
+        _mockRepository.Verify(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<Question>()), Times.Once);
+        Assert.Equal(now, updatedQuestion.ModifiedDate);
+        Assert.Equal(userName, updatedQuestion.ModifiedBy);
     }
 
     [Fact]

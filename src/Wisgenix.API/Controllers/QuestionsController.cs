@@ -63,7 +63,11 @@ public class QuestionsController : ControllerBase
                 MaxScore = question.MaxScore,
                 GeneratedBy = question.GeneratedBy,
                 TopicName = question.Topic?.TopicName ?? string.Empty,
-                QuestionSourceReference = question.QuestionSourceReference
+                QuestionSourceReference = question.QuestionSourceReference,
+                CreatedDate = question.CreatedDate,
+                CreatedBy = question.CreatedBy,
+                ModifiedDate = question.ModifiedDate,
+                ModifiedBy = question.ModifiedBy
             };
             return Ok(questionDto);
         }
@@ -80,9 +84,10 @@ public class QuestionsController : ControllerBase
     }
 
     [HttpPost("create-question")]
-    public async Task<ActionResult<QuestionDto>> CreateQuestion(CreateQuestionDto createQuestionDto)
+    public async Task<ActionResult<QuestionDto>> CreateQuestion([FromBody] CreateQuestionDto createQuestionDto)
     {
-        var logContext = new LogContext();
+        var userName = User?.Identity?.Name ?? "system";
+        LogContext logContext = LogContext.Create("CreateQuestion", userName);
         try
         {
             if (!await _questionRepository.TopicExistsAsync(logContext, createQuestionDto.TopicID))
@@ -97,7 +102,7 @@ public class QuestionsController : ControllerBase
                 DifficultyLevel = createQuestionDto.DifficultyLevel,
                 MaxScore = createQuestionDto.MaxScore,
                 GeneratedBy = createQuestionDto.GeneratedBy,
-                QuestionSourceReference = createQuestionDto.QuestionSourceReference
+                QuestionSourceReference = createQuestionDto.QuestionSourceReference ?? string.Empty
             };
 
             var createdQuestion = await _questionRepository.CreateAsync(logContext, question);
@@ -109,14 +114,19 @@ public class QuestionsController : ControllerBase
                 DifficultyLevel = createdQuestion.DifficultyLevel,
                 MaxScore = createdQuestion.MaxScore,
                 GeneratedBy = createdQuestion.GeneratedBy,
-                QuestionSourceReference = createdQuestion.QuestionSourceReference
+                TopicName = createdQuestion.Topic?.TopicName ?? string.Empty,
+                QuestionSourceReference = createdQuestion.QuestionSourceReference,
+                CreatedDate = createdQuestion.CreatedDate,
+                CreatedBy = createdQuestion.CreatedBy,
+                ModifiedDate = createdQuestion.ModifiedDate,
+                ModifiedBy = createdQuestion.ModifiedBy
             };
 
             return CreatedAtAction(nameof(GetQuestion), new { id = createdQuestion.ID }, questionDto);
         }
         catch (Exception ex)
         {
-            _logger.LogOperationError<Subject>(logContext, ex, "Error occurred while creating question");
+            _logger.LogOperationError<Question>(logContext, ex, "Error occurred while creating question");
             return StatusCode(500, "An error occurred while creating the question");
         }
     }
@@ -124,7 +134,8 @@ public class QuestionsController : ControllerBase
     [HttpPut("update-question/{id}")]
     public async Task<IActionResult> UpdateQuestion(int id, UpdateQuestionDto updateQuestionDto)
     {
-        var logContext = new LogContext();
+        var userName = User?.Identity?.Name ?? "system";
+        LogContext logContext = LogContext.Create("UpdateQuestion", userName);
         try
         {
             if (!await _questionRepository.TopicExistsAsync(logContext, updateQuestionDto.TopicID))
@@ -140,7 +151,7 @@ public class QuestionsController : ControllerBase
                 DifficultyLevel = updateQuestionDto.DifficultyLevel,
                 MaxScore = updateQuestionDto.MaxScore,
                 GeneratedBy = updateQuestionDto.GeneratedBy,
-                QuestionSourceReference = updateQuestionDto.QuestionSourceReference
+                QuestionSourceReference = updateQuestionDto.QuestionSourceReference ?? string.Empty
             };
 
             await _questionRepository.UpdateAsync(logContext, question);
@@ -153,7 +164,7 @@ public class QuestionsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogOperationError<Subject>(logContext, ex, "Error occurred while updating question");
+            _logger.LogOperationError<Question>(logContext, ex, $"Error occurred while updating question with ID: {id}");
             return StatusCode(500, "An error occurred while updating the question");
         }
     }

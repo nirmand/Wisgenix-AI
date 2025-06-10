@@ -80,44 +80,38 @@ public class QuestionOptionsController : ControllerBase
     }
 
     [HttpPost("create-option")]
-    public async Task<ActionResult<QuestionOptionDto>> CreateQuestionOption(CreateQuestionOptionDto createOptionDto)
+    public async Task<ActionResult<QuestionOptionDto>> CreateQuestionOption([FromBody] CreateQuestionOptionDto createQuestionOptionDto)
     {
-        var logContext = LogContext.Create("CreateQuestionOption");
+        var userName = User?.Identity?.Name ?? "system";
+        LogContext logContext = LogContext.Create("CreateQuestionOption", userName);
         try
         {
-            if (!await _questionOptionRepository.QuestionExistsAsync(logContext, createOptionDto.QuestionID))
-            {
-                return BadRequest($"Question with ID {createOptionDto.QuestionID} does not exist");
-            }
-
-            var option = _mapper.Map<QuestionOption>(createOptionDto);
+            var option = _mapper.Map<QuestionOption>(createQuestionOptionDto);
             var createdOption = await _questionOptionRepository.CreateAsync(logContext, option);
             var optionDto = _mapper.Map<QuestionOptionDto>(createdOption);
-
             return CreatedAtAction(nameof(GetQuestionOption), new { id = createdOption.ID }, optionDto);
         }
         catch (Exception ex)
         {
             _logger.LogOperationError<QuestionOption>(logContext, ex, "Error occurred while creating question option");
-            return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred while creating the question option");
+            return StatusCode(500, "An error occurred while creating the question option");
         }
     }
 
     [HttpPut("update-option/{id}")]
-    public async Task<IActionResult> UpdateQuestionOption(int id, UpdateQuestionOptionDto updateOptionDto)
+    public async Task<IActionResult> UpdateQuestionOption(int id, UpdateQuestionOptionDto updateQuestionOptionDto)
     {
-        var logContext = LogContext.Create("UpdateQuestionOption");
+        var userName = User?.Identity?.Name ?? "system";
+        LogContext logContext = LogContext.Create("UpdateQuestionOption", userName);
         try
         {
-            if (!await _questionOptionRepository.QuestionExistsAsync(logContext, updateOptionDto.QuestionID))
+            var existingOption = await _questionOptionRepository.GetByIdAsync(logContext, id);
+            if (existingOption == null)
             {
-                return BadRequest($"Question with ID {updateOptionDto.QuestionID} does not exist");
+                return NotFound($"Question option with ID {id} was not found");
             }
-
-            var option = _mapper.Map<QuestionOption>(updateOptionDto);
-            option.ID = id;
-            
-            await _questionOptionRepository.UpdateAsync(logContext, option);
+            _mapper.Map(updateQuestionOptionDto, existingOption);
+            await _questionOptionRepository.UpdateAsync(logContext, existingOption);
             return NoContent();
         }
         catch (QuestionOptionNotFoundException ex)
@@ -126,8 +120,8 @@ public class QuestionOptionsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogOperationError<QuestionOption>(logContext, ex, $"Error occurred while updating question option {id}");
-            return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred while updating the question option");
+            _logger.LogOperationError<QuestionOption>(logContext, ex, $"Error occurred while updating question option with ID: {id}");
+            return StatusCode(500, "An error occurred while updating the question option");
         }
     }
 
