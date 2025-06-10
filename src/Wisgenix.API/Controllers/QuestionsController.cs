@@ -143,17 +143,7 @@ public class QuestionsController : ControllerBase
         try
         {
             var questions = await _questionRepository.GetByTopicIdAsync(logContext, topicId);
-            var questionDtos = questions.Select(q => new QuestionDto
-            {
-                ID = q.ID,
-                QuestionText = q.QuestionText,
-                TopicID = q.TopicID,
-                DifficultyLevel = q.DifficultyLevel,
-                MaxScore = q.MaxScore,
-                GeneratedBy = q.GeneratedBy,
-                TopicName = q.Topic?.TopicName ?? string.Empty,
-                QuestionSourceReference = q.QuestionSourceReference
-            });
+            var questionDtos = _mapper.Map<IEnumerable<QuestionDto>>(questions);
             return Ok(questionDtos);
         }
         catch (Exception ex)
