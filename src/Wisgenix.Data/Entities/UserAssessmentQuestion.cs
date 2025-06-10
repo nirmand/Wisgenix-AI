@@ -1,8 +1,9 @@
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 namespace Wisgenix.Data.Entities;
+using Wisgenix.Data.Entities.Base;
 
-public class UserAssessmentQuestion
+public class UserAssessmentQuestion: AuditableEntity
 {
     public int ID { get; set; }
     public int UserAssessmentID { get; set; }

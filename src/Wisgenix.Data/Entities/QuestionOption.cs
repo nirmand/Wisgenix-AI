@@ -1,10 +1,11 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Wisgenix.Data.Entities.Base;
 
 namespace Wisgenix.Data.Entities;
 
-public class QuestionOption
+public class QuestionOption: AuditableEntity
 {
     [Key]
     public int ID { get; set; }

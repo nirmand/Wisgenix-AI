@@ -3,9 +3,11 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Wisgenix.Common;
+using Wisgenix.Data.Entities.Base;
+
 namespace Wisgenix.Data.Entities;
 
-public class UserAssessment
+public class UserAssessment: AuditableEntity
 {
     [Key]
     public int ID { get; set; }

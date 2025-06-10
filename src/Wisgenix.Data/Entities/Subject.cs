@@ -1,9 +1,10 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using Wisgenix.Data.Entities.Base;
 
 namespace Wisgenix.Data.Entities;
 
-public class Subject
+public class Subject: AuditableEntity
 {
     [Key]
     public int ID { get; set; }

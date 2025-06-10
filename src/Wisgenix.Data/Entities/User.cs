@@ -1,10 +1,11 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using Wisgenix.Common;
+using Wisgenix.Data.Entities.Base;
 
 namespace Wisgenix.Data.Entities;
 
-public class User
+public class User: AuditableEntity
 {
     [Key]
     public int ID { get; set; }
