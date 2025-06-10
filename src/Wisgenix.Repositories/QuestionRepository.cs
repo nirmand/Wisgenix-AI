@@ -40,6 +40,10 @@ public class QuestionRepository : BaseRepository<Question>, IQuestionRepository
 
     public async Task<Question> CreateAsync(LogContext logContext, Question question)
     {
+        question.CreatedDate = DateTime.UtcNow;
+        question.CreatedBy = logContext.UserName ?? "system";
+        question.ModifiedDate = null;
+        question.ModifiedBy = null;
         return await ExecuteWithLoggingAsync(
             logContext,
             $"Creating new question",
@@ -65,6 +69,8 @@ public class QuestionRepository : BaseRepository<Question>, IQuestionRepository
                     throw new QuestionNotFoundException(question.ID);
                 }
                 Context.Entry(existingQuestion).CurrentValues.SetValues(question);
+                existingQuestion.ModifiedDate = DateTime.UtcNow;
+                existingQuestion.ModifiedBy = logContext.UserName ?? "system";
                 await Context.SaveChangesAsync();
                 return existingQuestion;
             },

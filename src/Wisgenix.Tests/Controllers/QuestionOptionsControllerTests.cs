@@ -29,10 +29,14 @@ public class QuestionOptionsControllerTests
             .Returns((QuestionOption source) => new QuestionOptionDto
             {
                 ID = source.ID,
-                OptionText = source.OptionText,
+                OptionText = source.OptionText ?? string.Empty,
                 IsCorrect = source.IsCorrect,
                 QuestionID = source.QuestionID,
-                QuestionText = source.Question?.QuestionText ?? string.Empty
+                QuestionText = source.Question?.QuestionText ?? string.Empty,
+                CreatedDate = source.CreatedDate,
+                CreatedBy = source.CreatedBy,
+                ModifiedDate = source.ModifiedDate,
+                ModifiedBy = source.ModifiedBy
             });
 
         _mockMapper.Setup(m => m.Map<IEnumerable<QuestionOptionDto>>(It.IsAny<IEnumerable<QuestionOption>>()))
@@ -48,7 +52,7 @@ public class QuestionOptionsControllerTests
         _mockMapper.Setup(m => m.Map<QuestionOption>(It.IsAny<CreateQuestionOptionDto>()))
             .Returns((CreateQuestionOptionDto source) => new QuestionOption
             {
-                OptionText = source.OptionText,
+                OptionText = source.OptionText ?? string.Empty,
                 IsCorrect = source.IsCorrect,
                 QuestionID = source.QuestionID
             });
@@ -147,23 +151,20 @@ public class QuestionOptionsControllerTests
     public async Task CreateQuestionOption_WithValidData_ReturnsCreatedAtAction()
     {
         // Arrange
-        var createDto = new CreateQuestionOptionDto
-        {
-            OptionText = "New Option",
-            IsCorrect = true,
-            QuestionID = 1
-        };
-        var createdOption = new QuestionOption
-        {
+        var now = DateTime.UtcNow;
+        var userName = "testuser";
+        var createDto = new CreateQuestionOptionDto { OptionText = "Option 1", IsCorrect = true, QuestionID = 1 };
+        var createdOption = new QuestionOption {
             ID = 1,
-            OptionText = "New Option",
+            OptionText = "Option 1",
             IsCorrect = true,
             QuestionID = 1,
-            Question = new Question { QuestionText = "Test Question" }
+            CreatedDate = now,
+            CreatedBy = userName,
+            ModifiedDate = null,
+            ModifiedBy = null
         };
-        _mockRepository.Setup(repo => repo.QuestionExistsAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(true);
-        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), It.IsAny<QuestionOption>()))
-            .ReturnsAsync(createdOption);
+        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), It.IsAny<QuestionOption>())).ReturnsAsync(createdOption);
 
         // Act
         var result = await _controller.CreateQuestionOption(createDto);
@@ -171,10 +172,11 @@ public class QuestionOptionsControllerTests
         // Assert
         var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result.Result);
         var returnedOption = Assert.IsType<QuestionOptionDto>(createdAtActionResult.Value);
-        Assert.Equal(1, returnedOption.ID);
-        Assert.Equal("New Option", returnedOption.OptionText);
-        Assert.True(returnedOption.IsCorrect);
-        Assert.Equal("Test Question", returnedOption.QuestionText);
+        Assert.Equal(createDto.OptionText, returnedOption.OptionText);
+        Assert.Equal(now, returnedOption.CreatedDate);
+        Assert.Equal(userName, returnedOption.CreatedBy);
+        Assert.Null(returnedOption.ModifiedDate);
+        Assert.Null(returnedOption.ModifiedBy);
     }
 
     [Fact]
@@ -196,21 +198,40 @@ public class QuestionOptionsControllerTests
     public async Task UpdateQuestionOption_WithValidData_ReturnsNoContent()
     {
         // Arrange
-        var updateDto = new UpdateQuestionOptionDto
-        {
+        var now = DateTime.UtcNow;
+        var userName = "testuser";
+        var updateDto = new UpdateQuestionOptionDto { OptionText = "Updated Option", IsCorrect = false, QuestionID = 1 };
+        var existingOption = new QuestionOption {
+            ID = 1,
+            OptionText = "Option 1",
+            IsCorrect = true,
+            QuestionID = 1,
+            CreatedDate = now.AddDays(-1),
+            CreatedBy = userName,
+            ModifiedDate = null,
+            ModifiedBy = null
+        };
+        var updatedOption = new QuestionOption {
+            ID = 1,
             OptionText = "Updated Option",
             IsCorrect = false,
-            QuestionID = 1
+            QuestionID = 1,
+            CreatedDate = now.AddDays(-1),
+            CreatedBy = userName,
+            ModifiedDate = now,
+            ModifiedBy = userName
         };
-        _mockRepository.Setup(repo => repo.QuestionExistsAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(true);
-        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<QuestionOption>()))
-            .ReturnsAsync(new QuestionOption());
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(existingOption);
+        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<QuestionOption>())).ReturnsAsync(updatedOption);
 
         // Act
         var result = await _controller.UpdateQuestionOption(1, updateDto);
 
         // Assert
         Assert.IsType<NoContentResult>(result);
+        _mockRepository.Verify(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<QuestionOption>()), Times.Once);
+        Assert.Equal(now, updatedOption.ModifiedDate);
+        Assert.Equal(userName, updatedOption.ModifiedBy);
     }
 
     [Fact]

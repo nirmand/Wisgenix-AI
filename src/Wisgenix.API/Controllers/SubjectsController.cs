@@ -65,7 +65,8 @@ namespace Wisgenix.API.Controllers
         [HttpPost("create-subject")]
         public async Task<ActionResult<SubjectDto>> CreateSubject([FromBody] CreateSubjectDto createSubjectDto)
         {
-            LogContext logContext = LogContext.Create("CreateSubject");
+            var userName = User?.Identity?.Name ?? "system";
+            LogContext logContext = LogContext.Create("CreateSubject", userName);
             try
             {
                 var subject = _mapper.Map<Subject>(createSubjectDto);
@@ -76,15 +77,16 @@ namespace Wisgenix.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogOperationError<Subject>(logContext, ex, "Error creating subject");
-                return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred while creating the subject");
+                _logger.LogOperationError<Subject>(logContext, ex, "Error occurred while creating subject");
+                return StatusCode(500, "An error occurred while creating the subject");
             }
         }
 
         [HttpPut("update-subject/{id}")]
         public async Task<IActionResult> UpdateSubject(int id, UpdateSubjectDto updateSubjectDto)
         {
-            LogContext logContext = LogContext.Create("UpdateSubject");
+            var userName = User?.Identity?.Name ?? "system";
+            LogContext logContext = LogContext.Create("UpdateSubject", userName);
             try
             {
                 var existingSubject = await _subjectRepository.GetByIdAsync(logContext, id);
@@ -103,8 +105,8 @@ namespace Wisgenix.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogOperationError<Subject>(logContext, ex, $"Error updating subject {id}");
-                return StatusCode((int)HttpStatusCode.InternalServerError, "An error occurred while updating the subject");
+                _logger.LogOperationError<Subject>(logContext, ex, $"Error occurred while updating subject with ID: {id}");
+                return StatusCode(500, "An error occurred while updating the subject");
             }
         }
 

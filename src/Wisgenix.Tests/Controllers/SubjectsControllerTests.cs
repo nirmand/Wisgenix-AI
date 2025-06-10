@@ -26,10 +26,15 @@ public class SubjectsControllerTests
         _controller = new SubjectsController(_mockRepository.Object, _mockLogger.Object, _mapper.Object);
         
         _mapper.Setup(m => m.Map<SubjectDto>(It.IsAny<Subject>()))
-            .Returns((Subject source) => new SubjectDto 
-            { 
-                ID = source.ID, 
-                SubjectName = source.SubjectName 
+            .Returns((Subject source) => new SubjectDto
+            {
+                ID = source.ID,
+                SubjectName = source.SubjectName,
+                Topics = source.Topics?.Select(t => new TopicDto { ID = t.ID, TopicName = t.TopicName, SubjectID = t.SubjectID }).ToList() ?? new List<TopicDto>(),
+                CreatedDate = source.CreatedDate,
+                CreatedBy = source.CreatedBy,
+                ModifiedDate = source.ModifiedDate,
+                ModifiedBy = source.ModifiedBy
             });
         
         _mapper.Setup(m => m.Map<IEnumerable<SubjectDto>>(It.IsAny<IEnumerable<Subject>>()))
@@ -40,9 +45,10 @@ public class SubjectsControllerTests
             }));
 
         _mapper.Setup(m => m.Map<Subject>(It.IsAny<CreateSubjectDto>()))
-            .Returns((CreateSubjectDto source) => new Subject 
-            { 
-                SubjectName = source.SubjectName 
+            .Returns((CreateSubjectDto source) => new Subject
+            {
+                SubjectName = source.SubjectName,
+                Topics = new List<Topic>()
             });
     }
 
@@ -100,11 +106,19 @@ public class SubjectsControllerTests
     public async Task CreateSubject_WithValidData_ReturnsCreatedAtAction()
     {
         // Arrange
+        var now = DateTime.UtcNow;
+        var userName = "testuser";
         var createDto = new CreateSubjectDto { SubjectName = "C#" };
-        var createdSubject = new Subject { ID = 1, SubjectName = "C#" };
-        
-        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), It.IsAny<Subject>()))
-            .ReturnsAsync(createdSubject);
+        var createdSubject = new Subject {
+            ID = 1,
+            SubjectName = "C#",
+            CreatedDate = now,
+            CreatedBy = userName,
+            ModifiedDate = null,
+            ModifiedBy = null,
+            Topics = new List<Topic>()
+        };
+        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), It.IsAny<Subject>())).ReturnsAsync(createdSubject);
 
         // Act
         var result = await _controller.CreateSubject(createDto);
@@ -113,16 +127,39 @@ public class SubjectsControllerTests
         var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result.Result);
         var returnedSubject = Assert.IsType<SubjectDto>(createdAtActionResult.Value);
         Assert.Equal(createDto.SubjectName, returnedSubject.SubjectName);
+        Assert.Equal(now, returnedSubject.CreatedDate);
+        Assert.Equal(userName, returnedSubject.CreatedBy);
+        Assert.Null(returnedSubject.ModifiedDate);
+        Assert.Null(returnedSubject.ModifiedBy);
     }
 
     [Fact]
     public async Task UpdateSubject_WithValidData_ReturnsNoContent()
     {
         // Arrange
+        var now = DateTime.UtcNow;
+        var userName = "testuser";
         var updateDto = new UpdateSubjectDto { SubjectName = "Updated C#" };
-        var existingSubject = new Subject { ID = 1, SubjectName = "C#" };
-        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1))
-            .ReturnsAsync(existingSubject);
+        var existingSubject = new Subject {
+            ID = 1,
+            SubjectName = "C#",
+            CreatedDate = now.AddDays(-1),
+            CreatedBy = userName,
+            ModifiedDate = null,
+            ModifiedBy = null,
+            Topics = new List<Topic>()
+        };
+        var updatedSubject = new Subject {
+            ID = 1,
+            SubjectName = "Updated C#",
+            CreatedDate = now.AddDays(-1),
+            CreatedBy = userName,
+            ModifiedDate = now,
+            ModifiedBy = userName,
+            Topics = new List<Topic>()
+        };
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(existingSubject);
+        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<Subject>())).ReturnsAsync(updatedSubject);
 
         // Act
         var result = await _controller.UpdateSubject(1, updateDto);
@@ -130,6 +167,8 @@ public class SubjectsControllerTests
         // Assert
         Assert.IsType<NoContentResult>(result);
         _mockRepository.Verify(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<Subject>()), Times.Once);
+        Assert.Equal(now, updatedSubject.ModifiedDate);
+        Assert.Equal(userName, updatedSubject.ModifiedBy);
     }
 
     [Fact]
