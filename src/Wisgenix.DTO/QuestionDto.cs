@@ -35,7 +35,7 @@ public class UpdateQuestionDto : WriteQuestionBaseDto
 {
 }
 
-public class QuestionDto
+public class QuestionDto : AuditableDto
 {
     public int ID { get; set; }
     public string QuestionText { get; set; } = string.Empty;

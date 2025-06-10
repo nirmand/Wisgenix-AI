@@ -38,6 +38,11 @@ public class TopicRepository : BaseRepository<Topic>, ITopicRepository
 
     public async Task<Topic> CreateAsync(LogContext logContext, Topic topic)
     {
+        // Set audit fields
+        topic.CreatedDate = DateTime.UtcNow;
+        topic.CreatedBy = logContext.UserName ?? "system";
+        topic.ModifiedDate = null;
+        topic.ModifiedBy = null;
         return await ExecuteWithLoggingAsync(
             logContext,
             $"Creating new topic",
@@ -63,6 +68,9 @@ public class TopicRepository : BaseRepository<Topic>, ITopicRepository
                     throw new TopicNotFoundException(topic.ID);
                 }
                 Context.Entry(existingTopic).CurrentValues.SetValues(topic);
+                // Set audit fields
+                existingTopic.ModifiedDate = DateTime.UtcNow;
+                existingTopic.ModifiedBy = logContext.UserName ?? "system";
                 await Context.SaveChangesAsync();
                 return existingTopic;
             },

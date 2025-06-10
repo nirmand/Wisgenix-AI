@@ -23,7 +23,7 @@ public class UpdateQuestionOptionDto : WriteQuestionOptionBaseDto
 {
 }
 
-public class QuestionOptionDto
+public class QuestionOptionDto : AuditableDto
 {
     public int ID { get; set; }
     public int QuestionID { get; set; }

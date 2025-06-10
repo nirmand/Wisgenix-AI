@@ -67,7 +67,8 @@ public class TopicsController : ControllerBase
     [HttpPost("create-topic")]
     public async Task<ActionResult<TopicDto>> CreateTopic([FromBody] CreateTopicDto createTopicDto)
     {
-        LogContext logContext = LogContext.Create("CreateTopic");
+        var userName = User?.Identity?.Name ?? "system";
+        LogContext logContext = LogContext.Create("CreateTopic", userName);
         try
         {
             if (!await _subjectRepository.SubjectExistsAsync(logContext, createTopicDto.SubjectID))
@@ -92,7 +93,8 @@ public class TopicsController : ControllerBase
     [HttpPut("update-topic/{id}")]
     public async Task<IActionResult> UpdateTopic(int id, UpdateTopicDto updateTopicDto)
     {
-        LogContext logContext = LogContext.Create("UpdateTopic");
+        var userName = User?.Identity?.Name ?? "system";
+        LogContext logContext = LogContext.Create("UpdateTopic", userName);
         try
         {
             if (!await _subjectRepository.SubjectExistsAsync(logContext, updateTopicDto.SubjectID))

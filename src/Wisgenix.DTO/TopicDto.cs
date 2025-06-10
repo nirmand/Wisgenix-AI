@@ -15,7 +15,7 @@ public class UpdateTopicDto: WriteTopicBaseDto
 {
 }
 
-public class TopicDto
+public class TopicDto : AuditableDto
 {
     public int ID { get; set; }
     public string TopicName { get; set; } = string.Empty;

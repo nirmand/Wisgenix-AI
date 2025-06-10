@@ -16,9 +16,9 @@ public class UpdateSubjectDto: WriteSubjectBaseDto
 {
 }
 
-public class SubjectDto
+public class SubjectDto : AuditableDto
 {
     public int ID { get; set; }
     public string SubjectName { get; set; } = string.Empty;
     public ICollection<TopicDto> Topics { get; set; } = new List<TopicDto>();
-} 
+}
