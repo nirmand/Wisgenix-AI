@@ -27,7 +27,7 @@ public abstract class SubjectDtoWriteValidator<T>: AbstractValidator<T> where T:
     {
         // Add your custom validation logic here
         return !string.IsNullOrWhiteSpace(subjectName) && 
-               subjectName.All(c => char.IsLetterOrDigit(c) || char.IsWhiteSpace(c));
+               subjectName.All(c => c != '>' && c != '<' && c != '&' && c != '"' && c != '\'');
     }
 }
 
