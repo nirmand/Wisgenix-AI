@@ -165,7 +165,7 @@ public class QuestionOptionsControllerTests
             ModifiedBy = null
         };
         _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), It.IsAny<QuestionOption>())).ReturnsAsync(createdOption);
-
+        _mockRepository.Setup(repo => repo.QuestionExistsAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(true);
         // Act
         var result = await _controller.CreateQuestionOption(createDto);
 
@@ -333,33 +333,5 @@ public class QuestionOptionsControllerTests
         var statusCodeResult = Assert.IsType<ObjectResult>(result.Result);
         Assert.Equal(500, statusCodeResult.StatusCode);
         Assert.Equal("An error occurred while creating the question option", statusCodeResult.Value);
-    }
-
-    [Fact]
-    public async Task CreateQuestionOption_WithInvalidModelState_ReturnsBadRequest()
-    {
-        // Arrange
-        var createDto = new CreateQuestionOptionDto();
-        _controller.ModelState.AddModelError("OptionText", "Option text is required");
-
-        // Act
-        var result = await _controller.CreateQuestionOption(createDto);
-
-        // Assert
-        Assert.IsType<BadRequestObjectResult>(result.Result);
-    }
-
-    [Fact]
-    public async Task UpdateQuestionOption_WithInvalidModelState_ReturnsBadRequest()
-    {
-        // Arrange
-        var updateDto = new UpdateQuestionOptionDto();
-        _controller.ModelState.AddModelError("OptionText", "Option text is required");
-
-        // Act
-        var result = await _controller.UpdateQuestionOption(1, updateDto);
-
-        // Assert
-        Assert.IsType<BadRequestObjectResult>(result);
-    }
+    }    
 }

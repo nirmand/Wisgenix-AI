@@ -86,6 +86,10 @@ public class QuestionOptionsController : ControllerBase
         LogContext logContext = LogContext.Create("CreateQuestionOption", userName);
         try
         {
+            if (!await _questionOptionRepository.QuestionExistsAsync(logContext, createQuestionOptionDto.QuestionID))
+            {
+                return BadRequest($"Question with ID {createQuestionOptionDto.QuestionID} does not exist");
+            }
             var option = _mapper.Map<QuestionOption>(createQuestionOptionDto);
             var createdOption = await _questionOptionRepository.CreateAsync(logContext, option);
             var optionDto = _mapper.Map<QuestionOptionDto>(createdOption);

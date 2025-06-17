@@ -167,8 +167,9 @@ public class QuestionsControllerTests
             ModifiedBy = null
         };
         _mockMapper.Setup(m => m.Map<Question>(createDto)).Returns(question);
-        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), question)).ReturnsAsync(createdQuestion);
         _mockMapper.Setup(m => m.Map<QuestionDto>(createdQuestion)).Returns(questionDto);
+        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), question)).ReturnsAsync(createdQuestion);
+        _mockRepository.Setup(repo => repo.TopicExistsAsync(It.IsAny<LogContext>(), createDto.TopicID)).ReturnsAsync(true);
 
         // Act
         var result = await _controller.CreateQuestion(createDto);
@@ -241,6 +242,7 @@ public class QuestionsControllerTests
         _mockMapper.Setup(m => m.Map<Question>(updateDto)).Returns(question);
         _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(existingQuestion);
         _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), question)).ReturnsAsync(updatedQuestion);
+        _mockRepository.Setup(repo => repo.TopicExistsAsync(It.IsAny<LogContext>(), updateDto.TopicID)).ReturnsAsync(true);
 
         // Act
         var result = await _controller.UpdateQuestion(1, updateDto);
@@ -260,6 +262,7 @@ public class QuestionsControllerTests
         _mockRepository.Setup(repo => repo.TopicExistsAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(true);
         _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<Question>()))
             .ThrowsAsync(new QuestionNotFoundException(1));
+        _mockMapper.Setup(m => m.Map<Question>(updateDto)).Returns(new Question { ID = 1, TopicID = 1 });
 
         // Act
         var result = await _controller.UpdateQuestion(1, updateDto);
@@ -470,6 +473,13 @@ public class QuestionsControllerTests
             new() { ID = 2, QuestionText = "Q2", TopicID = topicId, Topic = new Topic { TopicName = "Topic1" } }
         };
         _mockRepository.Setup(r => r.GetByTopicIdAsync(It.IsAny<LogContext>(), topicId)).ReturnsAsync(questions);
+        _mockMapper.Setup(m => m.Map<IEnumerable<QuestionDto>>(questions)).Returns(questions.Select(q => new QuestionDto
+        {
+            ID = q.ID,
+            QuestionText = q.QuestionText,
+            TopicID = q.TopicID,
+            TopicName = q.Topic.TopicName
+        }));
 
         // Act
         var result = await _controller.GetQuestionsByTopic(topicId);
