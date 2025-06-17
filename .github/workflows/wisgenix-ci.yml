@@ -25,4 +25,4 @@ jobs:
     - name: Build
       run: dotnet build src/Wisgenix.sln --configuration Release --no-restore
     - name: Test
-      run: dotnet test src/Wisgenix.sln --no-build --verbosity normal
+      run: dotnet test src/Wisgenix.sln --configuration Release --no-build --verbosity normal
