@@ -51,9 +51,9 @@ public class SubjectValidatorTests
     }
 
     [Theory]
-    [InlineData("Subject@Name")]
-    [InlineData("Subject#123")]
-    [InlineData("Subject-Name")]
+    [InlineData("Subject>Name")]
+    [InlineData("Subject<123")]
+    [InlineData("Subject&Name")]
     public async Task CreateValidator_WithInvalidCharacters_ShouldFail(string subjectName)
     {
         // Arrange
