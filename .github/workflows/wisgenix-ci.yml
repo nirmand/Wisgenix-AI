@@ -19,10 +19,16 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 9.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore src/Wisgenix.sln
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build src/Wisgenix.sln --configuration Release --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test src/Wisgenix.sln --no-build --verbosity normal --logger trx --results-directory ./test-results
+    - name: Publish Test Results
+      uses: actions/upload-artifact@v4
+      if: always() # Upload even if tests fail
+      with:
+        name: test-results
+        path: ./test-results
