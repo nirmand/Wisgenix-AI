@@ -1,7 +1,7 @@
 # This workflow will build and test a .NET project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
-name: .NET
+name: CI for .NET Web APIs and React App
 
 on:
   push:
@@ -10,8 +10,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-
+  build-and-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,18 +20,42 @@ jobs:
       with:
         dotnet-version: 9.0.x
         
-    - name: Restore dependencies
+    - name: Restore .NET dependencies
       run: dotnet restore src/Wisgenix.sln
       
-    - name: Build
+    - name: Build .NET Solution
       run: dotnet build src/Wisgenix.sln --configuration Release --no-restore
       
-    - name: Test
+    - name: Run .NET Tests
       run: dotnet test src/Wisgenix.sln --configuration Release --no-build --verbosity normal --logger trx --results-directory ./test-results
       
-    - name: Publish Test Results
+    - name: Upload .NET Test Results
       uses: actions/upload-artifact@v4
       if: always() # Upload even if tests fail
       with:
-        name: test-results
-        path: ./test-results
+        name: dotnet-test-results
+        path: ./test-results/dotnet
+
+    # ----------------------------------------
+    # Next.js (React) App Build
+    # ----------------------------------------
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.x' # Specify your Node.js version
+        cache: 'npm'         # Caches npm dependencies to speed up builds
+        cache-dependency-path: 'Wisgenix.Web/package-lock.json' # Adjust if you use yarn.lock or pnpm-lock.yaml
+
+    - name: Install React dependencies
+      run: npm install
+      working-directory: src/Wisgenix.Web
+
+    - name: Build React App
+      run: npm run build
+      working-directory: src/Wisgenix.Web
+
+    - name: Upload React Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: nextjs-build-output
+        path: src/Wisgenix.Web/.next # Or whatever your Next.js build output directory is (commonly .next or build)
