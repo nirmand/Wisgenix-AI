@@ -44,7 +44,7 @@ jobs:
       with:
         node-version: '22.x' # Specify your Node.js version
         cache: 'npm'         # Caches npm dependencies to speed up builds
-        cache-dependency-path: 'Wisgenix.Web/package-lock.json' # Adjust if you use yarn.lock or pnpm-lock.yaml
+        cache-dependency-path: 'src/Wisgenix.Web/package-lock.json' # Adjust if you use yarn.lock or pnpm-lock.yaml
 
     - name: Install React dependencies
       run: npm install
