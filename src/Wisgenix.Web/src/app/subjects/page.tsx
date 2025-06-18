@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { getApiBaseUrl } from "../../utils/apiConfig";
+import { getErrorMessage } from "@/utils/getErrorMessage";
+import { ApiError } from "next/dist/server/api-utils";
 
 interface Subject {
   id: number;
@@ -45,11 +47,17 @@ const SubjectsPage: React.FC = () => {
       setError(null);
       try {
         const res = await fetch(`${getApiBaseUrl()}/api/content/subjects`);
-        if (!res.ok) throw new Error("Failed to fetch subjects");
+        if (!res.ok) {
+          // If the API provides a specific error message in the response body,
+          // you could try to parse it here, e.g.:
+          const errorBody = await res.json().catch(() => ({ message: res.statusText }));
+          throw new Error(errorBody.message || `Failed to fetch subjects: Status ${res.status}`);
+        }
         const data = await res.json();
         setSubjects(data);
       } catch (err) {
-        setError("Could not load subjects. Showing placeholder data.");
+        const messageToDisplay = getErrorMessage(err as ApiError);
+        setError(messageToDisplay);
         setSubjects(Array.from({ length: 23 }, (_, i) => ({
           id: i + 1,
           subjectName: `Subject ${i + 1}`,
@@ -74,6 +82,7 @@ const SubjectsPage: React.FC = () => {
   };
 
   const handleSave = async () => {
+    setError(null); // Clear previous errors before a new attempt
     setSaving(true);
     try {
       if (editSubject) {
@@ -83,7 +92,12 @@ const SubjectsPage: React.FC = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ subjectName }),
         });
-        if (!res.ok) throw new Error("Failed to update subject");
+        if (!res.ok) {
+          // If the API provides a specific error message in the response body,
+          // you could try to parse it here, e.g.:
+          const errorBody = await res.json().catch(() => ({ message: res.statusText }));
+          throw new Error(errorBody.message || `Failed to update subject: Status ${res.status}`);
+        }
         setSubjects((prev) =>
           prev.map((s) => (s.id === editSubject.id ? { ...s, subjectName } : s))
         );
@@ -94,28 +108,48 @@ const SubjectsPage: React.FC = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ subjectName }),
         });
-        if (!res.ok) throw new Error("Failed to create subject");
+        if (!res.ok) {
+          // If the API provides a specific error message in the response body,
+          // you could try to parse it here, e.g.:
+          const errorBody = await res.json().catch(() => ({ message: res.statusText }));
+          throw new Error(errorBody.message || `Failed to create subject: Status ${res.status}`);
+        }
         const newSubject = await res.json();
         setSubjects((prev) => [...prev, newSubject]);
       }
       setShowModal(false);
-    } catch (err) {
-      setError("Failed to save subject.");
+    } catch (err: unknown) {
+      const messageToDisplay = getErrorMessage(err as ApiError);
+      setError(messageToDisplay);
+
+      // Always log the full error for debugging in development/production monitoring
+      console.error("Error deleting subject:", err);
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id: number) => {
+    setError(null); // Clear previous errors before a new attempt
+
     if (!window.confirm("Are you sure you want to delete this subject?")) return;
     try {
       const res = await fetch(`${getApiBaseUrl()}/api/content/delete-subject/${id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete subject");
+      if (!res.ok) {
+        // If the API provides a specific error message in the response body,
+        // you could try to parse it here, e.g.:
+        const errorBody = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(errorBody.message || `Failed to delete subject: Status ${res.status}`);
+      }
       setSubjects((prev) => prev.filter((s) => s.id !== id));
-    } catch (err) {
-      setError("Failed to delete subject.");
+    } catch (err: unknown) {
+      const messageToDisplay = getErrorMessage(err as ApiError);
+      setError(messageToDisplay);
+
+      // Always log the full error for debugging in development/production monitoring
+      console.error("Error deleting subject:", err);
     }
   };
 
