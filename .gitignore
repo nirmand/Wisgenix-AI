@@ -406,5 +406,9 @@ terraform.tfvars
 infra/.terraform/providers/registry.terraform.io/hashicorp/azurerm/4.24.0/windows_amd64/terraform-provider-azurerm_v4.24.0_x5.exe
 infra/.terraform/providers/registry.terraform.io/hashicorp/azurerm/4.24.0/windows_amd64/LICENSE.txt
 infra/plans/*
-src/Database/*
+
+# Databases
 db/*
+
+# Deployment version for testing
+localhost/*

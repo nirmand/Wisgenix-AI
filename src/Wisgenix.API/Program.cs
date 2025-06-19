@@ -20,7 +20,7 @@ var logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
     .Enrich.FromLogContext();
 
-if (builder.Environment.IsDevelopment())
+if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("localhost"))
 {
     // Retrieve root folder path
     var rootFolderPath = System.IO.Directory.GetParent(System.IO.Directory.GetParent(System.Environment.CurrentDirectory).ToString()).ToString();
@@ -54,7 +54,7 @@ builder.Services.AddOpenTelemetry()
               .AddHttpClientInstrumentation();
 
         // Add Azure Monitor only for non-development environments
-        if (!builder.Environment.IsDevelopment())
+        if (!builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("localhost"))
         {
             tracing.AddAzureMonitorTraceExporter(options =>
             {
@@ -107,7 +107,7 @@ builder.Services.AddControllers();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("localhost"))
 {
     app.MapOpenApi();
     using (var scope = app.Services.CreateScope())
