@@ -1,5 +1,9 @@
 # Building and Running API and Web App
+This documentation is to help developers on setting up local environments, 
 
+## Pre-requisites
+-  VS Code with extensions for C# and .NET development
+-  Latest code from <a href="https://github.com/nirmand/Wisgenix-AI.git" target="_blank"> GitHub repository</a>
 ## Creating database
 - Open appSettings.[Environment].json
 - Set DatabasetType (1 = AzureSQL, 2 = SqLite)
