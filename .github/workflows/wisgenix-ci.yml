@@ -6,9 +6,13 @@ name: CI for .NET Web APIs and React App
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+    - '**.md'
   pull_request:
     branches: [ "main" ]
-
+    paths-ignore:
+    - '**.md'
+    
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
