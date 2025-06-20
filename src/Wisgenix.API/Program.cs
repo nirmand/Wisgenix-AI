@@ -104,6 +104,24 @@ builder.Services.AddAutoMapper(cfg => cfg.AddMaps(typeof(TopicMappingProfile).As
 
 builder.Services.AddControllers();
 
+var allowedOrigins = builder.Configuration.GetSection("CORS:Origins").Get<string[]>();
+
+// Add CORS services
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalhost-UI",
+        builder =>
+        {
+            if (allowedOrigins != null && allowedOrigins.Length > 0)
+            {
+                builder.WithOrigins(allowedOrigins) // Pass the array of origins
+                       .AllowAnyMethod()
+                       .AllowAnyHeader()
+                       .AllowCredentials();
+            }            
+        });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -123,16 +141,16 @@ if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("localhost"
         c.RoutePrefix = string.Empty;// Serve the Swagger UI at the app's root
     });
 }
+else
+{
+    app.UseHttpsRedirection();
+}
 
-app.UseHttpsRedirection();
 app.UseRouting();
 app.UseMiddleware<ValidationLoggingMiddleware>();
+app.UseCors("AllowLocalhost-UI");
 app.UseAuthorization();
 app.MapControllers();
-app.UseCors(builder =>
-    builder
-        .AllowAnyOrigin()
-        .AllowAnyMethod()
-        .AllowAnyHeader());
+app.UseSerilogRequestLogging();
 
 app.Run();
