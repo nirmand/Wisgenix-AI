@@ -26,6 +26,10 @@ dotnet ef database update --project Wisgenix.Data --startup-project Wisgenix.API
 
 ## Hosting app on local server
 ### Wisgenix.Api (Kestrel)
+#### Using Scripts
+There exists a PowerShell script to perform all steps from publishing website on localhost to running it.
+This can be found within deploy-api-localhost.ps1 in scripts folder.
+#### Manual Steps
 If you don't have a dedicated hosting subscription on Azure, and if you are looking to host and run app on local server. This is considered as a seperate environment as per **appSettings.localhost.json**.
 - Create a new folder for hosting (example - E:\Wisgenix\localhost)
 - Open PowerShell
