@@ -40,6 +40,12 @@ public class QuestionRepository : BaseRepository<Question>, IQuestionRepository
 
     public async Task<Question> CreateAsync(LogContext logContext, Question question)
     {
+        // Check for duplicate question text for the same topic
+        bool exists = await Context.Questions.AnyAsync(q => q.QuestionText == question.QuestionText && q.TopicID == question.TopicID);
+        if (exists)
+        {
+            throw new DuplicateQuestionException(question.QuestionText, question.TopicID);
+        }
         question.CreatedDate = DateTime.UtcNow;
         question.CreatedBy = logContext.UserName ?? "system";
         question.ModifiedDate = null;

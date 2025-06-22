@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Wisgenix.Data.Entities;
+using Wisgenix.Data.Configurations;
+
 namespace Wisgenix.Data;
 
 public class AppDbContext: DbContext
@@ -17,7 +19,11 @@ public class AppDbContext: DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        // Add model configurations here if needed
+        
+        // Apply entity configurations
+        modelBuilder.ApplyConfiguration(new SubjectConfiguration());
+        modelBuilder.ApplyConfiguration(new TopicConfiguration());
+        modelBuilder.ApplyConfiguration(new QuestionConfiguration());
     }
 
     /// <summary>

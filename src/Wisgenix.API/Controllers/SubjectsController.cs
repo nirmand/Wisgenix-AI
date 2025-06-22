@@ -75,6 +75,10 @@ namespace Wisgenix.API.Controllers
 
                 return CreatedAtAction(nameof(GetSubject), new { id = createdSubject.ID }, subjectDto);
             }
+            catch (DuplicateSubjectException ex)
+            {
+                return BadRequest(ex.Message);
+            }
             catch (Exception ex)
             {
                 _logger.LogOperationError<Subject>(logContext, ex, "Error occurred while creating subject");

@@ -39,6 +39,12 @@ namespace Wisgenix.Repositories
 
         public async Task<Subject> CreateAsync(LogContext logContext, Subject subject)
         {
+            // Check for duplicate subject name
+            bool exists = await Context.Subjects.AnyAsync(s => s.SubjectName == subject.SubjectName);
+            if (exists)
+            {
+                throw new DuplicateSubjectException(subject.SubjectName);
+            }
             subject.CreatedDate = DateTime.UtcNow;
             subject.CreatedBy = logContext.UserName ?? "system";
             subject.ModifiedDate = null;

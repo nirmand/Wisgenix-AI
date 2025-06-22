@@ -83,6 +83,10 @@ public class TopicsController : ControllerBase
 
             return CreatedAtAction(nameof(GetTopic), new { id = createdTopic.ID }, topicDto);
         }
+        catch (DuplicateTopicException ex)
+        {
+            return BadRequest(ex.Message);
+        }
         catch (Exception ex)
         {
             _logger.LogOperationError<Topic>(logContext, ex, "Error occurred while creating topic");

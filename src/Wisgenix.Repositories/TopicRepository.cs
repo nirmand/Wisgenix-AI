@@ -38,6 +38,12 @@ public class TopicRepository : BaseRepository<Topic>, ITopicRepository
 
     public async Task<Topic> CreateAsync(LogContext logContext, Topic topic)
     {
+        // Check for duplicate topic name for the same subject
+        bool exists = await Context.Topics.AnyAsync(t => t.TopicName == topic.TopicName && t.SubjectID == topic.SubjectID);
+        if (exists)
+        {
+            throw new DuplicateTopicException(topic.TopicName, topic.SubjectID);
+        }
         // Set audit fields
         topic.CreatedDate = DateTime.UtcNow;
         topic.CreatedBy = logContext.UserName ?? "system";

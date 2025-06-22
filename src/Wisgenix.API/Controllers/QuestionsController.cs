@@ -79,6 +79,10 @@ public class QuestionsController : ControllerBase
             var questionDto = _mapper.Map<QuestionDto>(createdQuestion);
             return CreatedAtAction(nameof(GetQuestion), new { id = createdQuestion.ID }, questionDto);
         }
+        catch (DuplicateQuestionException ex)
+        {
+            return BadRequest(ex.Message);
+        }
         catch (Exception ex)
         {
             _logger.LogOperationError<Question>(logContext, ex, "Error occurred while creating question");
