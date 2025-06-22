@@ -77,7 +77,7 @@ namespace Wisgenix.API.Controllers
             }
             catch (DuplicateSubjectException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -105,11 +105,11 @@ namespace Wisgenix.API.Controllers
             }
             catch (DuplicateSubjectException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new { message = ex.Message });
             }
             catch (SubjectNotFoundException ex)
             {
-                return NotFound(ex.Message);
+                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {

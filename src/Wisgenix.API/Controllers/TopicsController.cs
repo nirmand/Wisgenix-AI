@@ -73,8 +73,7 @@ public class TopicsController : ControllerBase
         {
             if (!await _subjectRepository.SubjectExistsAsync(logContext, createTopicDto.SubjectID))
             {
-                _logger.LogOperationWarning<Topic>(logContext, $"Subject with ID {createTopicDto.SubjectID} does not exist");
-                return BadRequest($"Subject with ID {createTopicDto.SubjectID} does not exist");
+                throw new SubjectNotFoundException(createTopicDto.SubjectID);
             }
 
             var topic = _mapper.Map<Topic>(createTopicDto);
@@ -83,9 +82,15 @@ public class TopicsController : ControllerBase
 
             return CreatedAtAction(nameof(GetTopic), new { id = createdTopic.ID }, topicDto);
         }
+        catch (SubjectNotFoundException ex)
+        {
+            _logger.LogOperationWarning<Topic>(logContext, ex.Message);
+            return BadRequest(new {message = ex.Message});
+        }
         catch (DuplicateTopicException ex)
         {
-            return BadRequest(ex.Message);
+            _logger.LogOperationWarning<Topic>(logContext, ex.Message);
+            return BadRequest(new {message = ex.Message});
         }
         catch (Exception ex)
         {
@@ -103,26 +108,30 @@ public class TopicsController : ControllerBase
         {
             if (!await _subjectRepository.SubjectExistsAsync(logContext, updateTopicDto.SubjectID))
             {
-                return BadRequest($"Subject with ID {updateTopicDto.SubjectID} does not exist");
+                throw new SubjectNotFoundException(updateTopicDto.SubjectID);
             }
 
             var existingTopic = await _topicRepository.GetByIdAsync(logContext, id);
             if (existingTopic == null)
             {
-                return NotFound($"Topic with ID {id} was not found");
+                throw new TopicNotFoundException(id);
             }
 
             _mapper.Map(updateTopicDto, existingTopic);
             await _topicRepository.UpdateAsync(logContext, existingTopic);
             return NoContent();
         }
-        catch (DuplicateTopicException ex)
-        {
-            return BadRequest(ex.Message);
-        }
         catch (TopicNotFoundException ex)
         {
-            return NotFound(ex.Message);
+            return BadRequest(new {message = ex.Message});
+        }
+        catch (SubjectNotFoundException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (DuplicateTopicException ex)
+        {
+            return BadRequest(new {message = ex.Message});
         }
         catch (Exception ex)
         {

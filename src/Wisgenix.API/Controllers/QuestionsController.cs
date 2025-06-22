@@ -99,7 +99,7 @@ public class QuestionsController : ControllerBase
         {
             if (!await _questionRepository.TopicExistsAsync(logContext, updateQuestionDto.TopicID))
             {
-                return BadRequest($"Topic with ID {updateQuestionDto.TopicID} does not exist");
+                throw new TopicNotFoundException(updateQuestionDto.TopicID);
             }
 
             var question = _mapper.Map<Question>(updateQuestionDto);
@@ -107,14 +107,17 @@ public class QuestionsController : ControllerBase
             await _questionRepository.UpdateAsync(logContext, question);
             return NoContent();
         }
+        catch (TopicNotFoundException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
         catch (DuplicateQuestionException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
         catch (QuestionNotFoundException ex)
         {
-            _logger.LogOperationError<Subject>(logContext, ex, $"Question with ID: {id} was not found");
-            return NotFound(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
