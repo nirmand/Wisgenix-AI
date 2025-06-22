@@ -64,6 +64,12 @@ public class QuestionRepository : BaseRepository<Question>, IQuestionRepository
 
     public async Task<Question> UpdateAsync(LogContext logContext, Question question)
     {
+        // Check for duplicate question text for the same topic (excluding current entity)
+        bool exists = await Context.Questions.AnyAsync(q => q.QuestionText == question.QuestionText && q.TopicID == question.TopicID && q.ID != question.ID);
+        if (exists)
+        {
+            throw new DuplicateQuestionException(question.QuestionText, question.TopicID);
+        }
         return await ExecuteWithLoggingAsync(
             logContext,
             $"Updating question with ID: {question.ID}",

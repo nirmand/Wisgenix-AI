@@ -103,6 +103,10 @@ namespace Wisgenix.API.Controllers
                 await _subjectRepository.UpdateAsync(logContext, existingSubject);
                 return NoContent();
             }
+            catch (DuplicateSubjectException ex)
+            {
+                return BadRequest(ex.Message);
+            }
             catch (SubjectNotFoundException ex)
             {
                 return NotFound(ex.Message);

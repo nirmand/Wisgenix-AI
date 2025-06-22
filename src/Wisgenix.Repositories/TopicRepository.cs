@@ -63,6 +63,12 @@ public class TopicRepository : BaseRepository<Topic>, ITopicRepository
 
     public async Task<Topic> UpdateAsync(LogContext logContext, Topic topic)
     {
+        // Check for duplicate topic name for the same subject (excluding current entity)
+        bool exists = await Context.Topics.AnyAsync(t => t.TopicName == topic.TopicName && t.SubjectID == topic.SubjectID && t.ID != topic.ID);
+        if (exists)
+        {
+            throw new DuplicateTopicException(topic.TopicName, topic.SubjectID);
+        }
         return await ExecuteWithLoggingAsync(
             logContext,
             $"Updating topic with ID: {topic.ID}",

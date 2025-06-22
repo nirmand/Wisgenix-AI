@@ -389,4 +389,40 @@ public class TopicsControllerTests
         Assert.Equal(500, statusResult.StatusCode);
         Assert.Equal("An error occurred while retrieving topics by subject", statusResult.Value);
     }
+
+    [Fact]
+    public async Task CreateTopic_WithDuplicateTopic_ReturnsBadRequest()
+    {
+        // Arrange
+        var createDto = new CreateTopicDto { TopicName = "Duplicate Topic", SubjectID = 1 };
+        _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(true);
+        _mapper.Setup(m => m.Map<Topic>(createDto)).Returns(new Topic { TopicName = createDto.TopicName, SubjectID = createDto.SubjectID });
+        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), It.IsAny<Topic>())).ThrowsAsync(new DuplicateTopicException(createDto.TopicName, createDto.SubjectID));
+
+        // Act
+        var result = await _controller.CreateTopic(createDto);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Contains("already exists", badRequestResult.Value.ToString());
+    }
+
+    [Fact]
+    public async Task UpdateTopic_WithDuplicateTopic_ReturnsBadRequest()
+    {
+        // Arrange
+        var updateDto = new UpdateTopicDto { TopicName = "Duplicate Topic", SubjectID = 1 };
+        _mockSubjectRepository.Setup(repo => repo.SubjectExistsAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(true);
+        var existingTopic = new Topic { ID = 1, TopicName = "Old Name", SubjectID = 1 };
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(existingTopic);
+        _mapper.Setup(m => m.Map(updateDto, existingTopic)).Callback(() => { existingTopic.TopicName = updateDto.TopicName; existingTopic.SubjectID = updateDto.SubjectID; });
+        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), existingTopic)).ThrowsAsync(new DuplicateTopicException(updateDto.TopicName, updateDto.SubjectID));
+
+        // Act
+        var result = await _controller.UpdateTopic(1, updateDto);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Contains("already exists", badRequestResult.Value.ToString());
+    }
 }

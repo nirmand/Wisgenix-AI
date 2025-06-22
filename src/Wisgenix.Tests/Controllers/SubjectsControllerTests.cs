@@ -301,4 +301,38 @@ public class SubjectsControllerTests
         Assert.Equal(500, statusCodeResult.StatusCode);
         Assert.Equal("An error occurred while retrieving the subject", statusCodeResult.Value);
     }
+
+    [Fact]
+    public async Task CreateSubject_WithDuplicateSubject_ReturnsBadRequest()
+    {
+        // Arrange
+        var createDto = new CreateSubjectDto { SubjectName = "Duplicate Subject" };
+        _mapper.Setup(m => m.Map<Subject>(createDto)).Returns(new Subject { SubjectName = createDto.SubjectName });
+        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), It.IsAny<Subject>())).ThrowsAsync(new DuplicateSubjectException(createDto.SubjectName));
+
+        // Act
+        var result = await _controller.CreateSubject(createDto);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Contains("already exists", badRequestResult.Value.ToString());
+    }
+
+    [Fact]
+    public async Task UpdateSubject_WithDuplicateSubject_ReturnsBadRequest()
+    {
+        // Arrange
+        var updateDto = new UpdateSubjectDto { SubjectName = "Duplicate Subject" };
+        var existingSubject = new Subject { ID = 1, SubjectName = "Old Name" };
+        _mockRepository.Setup(repo => repo.GetByIdAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(existingSubject);
+        _mapper.Setup(m => m.Map(updateDto, existingSubject)).Callback(() => { existingSubject.SubjectName = updateDto.SubjectName; });
+        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), existingSubject)).ThrowsAsync(new DuplicateSubjectException(updateDto.SubjectName));
+
+        // Act
+        var result = await _controller.UpdateSubject(1, updateDto);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Contains("already exists", badRequestResult.Value.ToString());
+    }
 }

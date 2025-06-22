@@ -506,4 +506,54 @@ public class QuestionsControllerTests
         Assert.Equal(500, statusResult.StatusCode);
         Assert.Equal("An error occurred while retrieving questions by topic", statusResult.Value);
     }
+
+    [Fact]
+    public async Task CreateQuestion_WithDuplicateQuestion_ReturnsBadRequest()
+    {
+        // Arrange
+        var createDto = new CreateQuestionDto
+        {
+            QuestionText = "Duplicate Question",
+            TopicID = 1,
+            DifficultyLevel = 2,
+            MaxScore = 1,
+            GeneratedBy = QuestionSource.AI,
+            QuestionSourceReference = "https://test.com"
+        };
+        _mockRepository.Setup(repo => repo.TopicExistsAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(true);
+        _mockMapper.Setup(m => m.Map<Question>(createDto)).Returns(new Question { QuestionText = createDto.QuestionText, TopicID = createDto.TopicID });
+        _mockRepository.Setup(repo => repo.CreateAsync(It.IsAny<LogContext>(), It.IsAny<Question>())).ThrowsAsync(new DuplicateQuestionException(createDto.QuestionText, createDto.TopicID));
+
+        // Act
+        var result = await _controller.CreateQuestion(createDto);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Contains("already exists", badRequestResult.Value.ToString());
+    }
+
+    [Fact]
+    public async Task UpdateQuestion_WithDuplicateQuestion_ReturnsBadRequest()
+    {
+        // Arrange
+        var updateDto = new UpdateQuestionDto
+        {
+            QuestionText = "Duplicate Question",
+            TopicID = 1,
+            DifficultyLevel = 2,
+            MaxScore = 1,
+            GeneratedBy = QuestionSource.AI,
+            QuestionSourceReference = "https://test.com"
+        };
+        _mockRepository.Setup(repo => repo.TopicExistsAsync(It.IsAny<LogContext>(), 1)).ReturnsAsync(true);
+        _mockMapper.Setup(m => m.Map<Question>(updateDto)).Returns(new Question { QuestionText = updateDto.QuestionText, TopicID = updateDto.TopicID });
+        _mockRepository.Setup(repo => repo.UpdateAsync(It.IsAny<LogContext>(), It.IsAny<Question>())).ThrowsAsync(new DuplicateQuestionException(updateDto.QuestionText, updateDto.TopicID));
+
+        // Act
+        var result = await _controller.UpdateQuestion(1, updateDto);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Contains("already exists", badRequestResult.Value.ToString());
+    }
 }

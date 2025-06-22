@@ -107,6 +107,10 @@ public class QuestionsController : ControllerBase
             await _questionRepository.UpdateAsync(logContext, question);
             return NoContent();
         }
+        catch (DuplicateQuestionException ex)
+        {
+            return BadRequest(ex.Message);
+        }
         catch (QuestionNotFoundException ex)
         {
             _logger.LogOperationError<Subject>(logContext, ex, $"Question with ID: {id} was not found");

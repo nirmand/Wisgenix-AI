@@ -63,6 +63,12 @@ namespace Wisgenix.Repositories
 
         public async Task<Subject> UpdateAsync(LogContext logContext, Subject subject)
         {
+            // Check for duplicate subject name (excluding current entity)
+            bool exists = await Context.Subjects.AnyAsync(s => s.SubjectName == subject.SubjectName && s.ID != subject.ID);
+            if (exists)
+            {
+                throw new DuplicateSubjectException(subject.SubjectName);
+            }
             return await ExecuteWithLoggingAsync(
                 logContext,
                 $"Updating subject with ID: {subject.ID}",

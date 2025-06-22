@@ -116,6 +116,10 @@ public class TopicsController : ControllerBase
             await _topicRepository.UpdateAsync(logContext, existingTopic);
             return NoContent();
         }
+        catch (DuplicateTopicException ex)
+        {
+            return BadRequest(ex.Message);
+        }
         catch (TopicNotFoundException ex)
         {
             return NotFound(ex.Message);
