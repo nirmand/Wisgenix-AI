@@ -43,6 +43,10 @@ if (Test-Path $DbDestinationFolder) {
     if ($Choice -eq "C") {
         Write-Host "   - User chose to replace. Cleaning existing database folder..."
         Remove-Item -Path $DbDestinationFolder -Recurse -Force
+		if (-not (Test-Path -Path $DbDestinationFolder)) {
+			Write-Host "Destination folder '$DbDestinationFolder' does not exist. Creating it..."
+			New-Item -Path $DbDestinationFolder -ItemType Directory -Force | Out-Null
+		} 
         Write-Host "   - Copying database files from '$DbSourceFolder' to '$DbDestinationFolder'..."
         Copy-Item -Path "$DbSourceFolder\*" -Destination $DbDestinationFolder -Recurse -Force
         Write-Host "   - Database files copied successfully."
