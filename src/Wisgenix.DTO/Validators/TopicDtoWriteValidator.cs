@@ -32,7 +32,7 @@ public abstract class TopicDtoWriteValidator<T>: AbstractValidator<T> where T: W
     {
         // Add your custom validation logic here
         return !string.IsNullOrWhiteSpace(topicName) && 
-               topicName.All(c => char.IsLetterOrDigit(c) || char.IsWhiteSpace(c));
+               !ValidationHelpers.ContainsInvalidChars(topicName);
     }
 }
 
