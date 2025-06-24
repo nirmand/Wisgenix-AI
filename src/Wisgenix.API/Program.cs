@@ -147,7 +147,7 @@ else
 }
 
 app.UseRouting();
-app.UseMiddleware<ValidationLoggingMiddleware>();
+app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseCors("AllowLocalhost-UI");
 app.UseAuthorization();
 app.MapControllers();
