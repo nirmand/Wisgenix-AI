@@ -3,6 +3,9 @@
 
 name: CI for .NET Web APIs and React App
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ "main" ]
