@@ -11,7 +11,7 @@ namespace Wisgenix.API.Controllers
 {
     [ApiController]
     [Route("api/content")]
-    public class SubjectsController : ControllerBase
+    public class SubjectsController : BaseApiController
     {
         private readonly ISubjectRepository _subjectRepository;
         private readonly ILoggingService _logger;
@@ -27,7 +27,7 @@ namespace Wisgenix.API.Controllers
         [HttpGet("subjects")]
         public async Task<ActionResult<IEnumerable<SubjectDto>>> GetSubjects()
         {
-            LogContext logContext = LogContext.Create("GetSubjects");
+            var logContext = CreateLogContext("GetSubjects");
             try
             {
                 var subjects = await _subjectRepository.GetAllAsync(logContext);
@@ -44,7 +44,7 @@ namespace Wisgenix.API.Controllers
         [HttpGet("subject/{id}")]
         public async Task<ActionResult<SubjectDto>> GetSubject(int id)
         {
-            LogContext logContext = LogContext.Create("GetSubject");
+            var logContext = CreateLogContext("GetSubject");
             try
             {
                 var subject = await _subjectRepository.GetByIdAsync(logContext, id);
@@ -53,6 +53,7 @@ namespace Wisgenix.API.Controllers
             }
             catch (SubjectNotFoundException ex)
             {
+                _logger.LogOperationWarning<Subject>(logContext, ex.Message);
                 return NotFound(ex.Message);
             }
             catch (Exception ex)
@@ -66,17 +67,17 @@ namespace Wisgenix.API.Controllers
         public async Task<ActionResult<SubjectDto>> CreateSubject([FromBody] CreateSubjectDto createSubjectDto)
         {
             var userName = User?.Identity?.Name ?? "system";
-            LogContext logContext = LogContext.Create("CreateSubject", userName);
+            var logContext = CreateLogContext("CreateSubject", userName);
             try
             {
                 var subject = _mapper.Map<Subject>(createSubjectDto);
                 var createdSubject = await _subjectRepository.CreateAsync(logContext, subject);
                 var subjectDto = _mapper.Map<SubjectDto>(createdSubject);
-
                 return CreatedAtAction(nameof(GetSubject), new { id = createdSubject.ID }, subjectDto);
             }
             catch (DuplicateSubjectException ex)
             {
+                _logger.LogOperationWarning<Subject>(logContext, ex.Message);
                 return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
@@ -90,25 +91,27 @@ namespace Wisgenix.API.Controllers
         public async Task<IActionResult> UpdateSubject(int id, UpdateSubjectDto updateSubjectDto)
         {
             var userName = User?.Identity?.Name ?? "system";
-            LogContext logContext = LogContext.Create("UpdateSubject", userName);
+            var logContext = CreateLogContext("UpdateSubject", userName);
             try
             {
                 var existingSubject = await _subjectRepository.GetByIdAsync(logContext, id);
                 if (existingSubject == null)
                 {
+                    _logger.LogOperationWarning<Subject>(logContext, $"Subject with ID {id} was not found");
                     return NotFound($"Subject with ID {id} was not found");
                 }
-
                 _mapper.Map(updateSubjectDto, existingSubject);
                 await _subjectRepository.UpdateAsync(logContext, existingSubject);
                 return NoContent();
             }
             catch (DuplicateSubjectException ex)
             {
+                _logger.LogOperationWarning<Subject>(logContext, ex.Message);
                 return BadRequest(new { message = ex.Message });
             }
             catch (SubjectNotFoundException ex)
             {
+                _logger.LogOperationWarning<Subject>(logContext, ex.Message);
                 return BadRequest(ex.Message);
             }
             catch (Exception ex)
@@ -121,14 +124,17 @@ namespace Wisgenix.API.Controllers
         [HttpDelete("delete-subject/{id}")]
         public async Task<IActionResult> DeleteSubject(int id)
         {
-            LogContext logContext = LogContext.Create("DeleteSubject");
+            var logContext = CreateLogContext("DeleteSubject");
             try
             {
+                _logger.LogInformation($"Deleting subject with ID: {id}");
                 await _subjectRepository.DeleteAsync(logContext, id);
+                _logger.LogInformation($"Successfully deleted subject with ID: {id}");
                 return NoContent();
             }
             catch (SubjectNotFoundException ex)
             {
+                _logger.LogOperationWarning<Subject>(logContext, ex.Message);
                 return NotFound(ex.Message);
             }
             catch (Exception ex)

@@ -11,7 +11,7 @@ namespace Wisgenix.API.Controllers;
 
 [ApiController]
 [Route("api/content")]
-public class QuestionOptionsController : ControllerBase
+public class QuestionOptionsController : BaseApiController
 {
     private readonly IQuestionOptionRepository _questionOptionRepository;
     private readonly ILoggingService _logger;
@@ -27,7 +27,7 @@ public class QuestionOptionsController : ControllerBase
     [HttpGet("options")]
     public async Task<ActionResult<IEnumerable<QuestionOptionDto>>> GetQuestionOptions()
     {
-        var logContext = LogContext.Create("GetQuestionOptions");
+        var logContext = CreateLogContext("GetQuestionOptions");
         try
         {
             var options = await _questionOptionRepository.GetAllAsync(logContext);
@@ -44,7 +44,7 @@ public class QuestionOptionsController : ControllerBase
     [HttpGet("option/{id}")]
     public async Task<ActionResult<QuestionOptionDto>> GetQuestionOption(int id)
     {
-        var logContext = LogContext.Create("GetQuestionOption");
+        var logContext = CreateLogContext("GetQuestionOption");
         try
         {
             var option = await _questionOptionRepository.GetByIdAsync(logContext, id);
@@ -53,6 +53,7 @@ public class QuestionOptionsController : ControllerBase
         }
         catch (QuestionOptionNotFoundException ex)
         {
+            _logger.LogOperationWarning<QuestionOption>(logContext, ex.Message);
             return NotFound(ex.Message);
         }
         catch (Exception ex)
@@ -65,7 +66,7 @@ public class QuestionOptionsController : ControllerBase
     [HttpGet("options-by-question/{questionId}")]
     public async Task<ActionResult<IEnumerable<QuestionOptionDto>>> GetOptionsByQuestion(int questionId)
     {
-        var logContext = LogContext.Create("GetOptionsByQuestion");
+        var logContext = CreateLogContext("GetOptionsByQuestion");
         try
         {
             var options = await _questionOptionRepository.GetByQuestionIdAsync(logContext, questionId);
@@ -83,11 +84,12 @@ public class QuestionOptionsController : ControllerBase
     public async Task<ActionResult<QuestionOptionDto>> CreateQuestionOption([FromBody] CreateQuestionOptionDto createQuestionOptionDto)
     {
         var userName = User?.Identity?.Name ?? "system";
-        LogContext logContext = LogContext.Create("CreateQuestionOption", userName);
+        var logContext = CreateLogContext("CreateQuestionOption", userName);
         try
         {
             if (!await _questionOptionRepository.QuestionExistsAsync(logContext, createQuestionOptionDto.QuestionID))
             {
+                _logger.LogOperationWarning<QuestionOption>(logContext, $"Question with ID {createQuestionOptionDto.QuestionID} does not exist");
                 return BadRequest($"Question with ID {createQuestionOptionDto.QuestionID} does not exist");
             }
             var option = _mapper.Map<QuestionOption>(createQuestionOptionDto);
@@ -106,12 +108,13 @@ public class QuestionOptionsController : ControllerBase
     public async Task<IActionResult> UpdateQuestionOption(int id, UpdateQuestionOptionDto updateQuestionOptionDto)
     {
         var userName = User?.Identity?.Name ?? "system";
-        LogContext logContext = LogContext.Create("UpdateQuestionOption", userName);
+        var logContext = CreateLogContext("UpdateQuestionOption", userName);
         try
         {
             var existingOption = await _questionOptionRepository.GetByIdAsync(logContext, id);
             if (existingOption == null)
             {
+                _logger.LogOperationWarning<QuestionOption>(logContext, $"Question option with ID {id} was not found");
                 return NotFound($"Question option with ID {id} was not found");
             }
             _mapper.Map(updateQuestionOptionDto, existingOption);
@@ -120,6 +123,7 @@ public class QuestionOptionsController : ControllerBase
         }
         catch (QuestionOptionNotFoundException ex)
         {
+            _logger.LogOperationWarning<QuestionOption>(logContext, ex.Message);
             return NotFound(ex.Message);
         }
         catch (Exception ex)
@@ -132,14 +136,17 @@ public class QuestionOptionsController : ControllerBase
     [HttpDelete("delete-option/{id}")]
     public async Task<IActionResult> DeleteQuestionOption(int id)
     {
-        var logContext = LogContext.Create("DeleteQuestionOption");
+        var logContext = CreateLogContext("DeleteQuestionOption");
         try
         {
+            _logger.LogInformation($"Deleting question option with ID: {id}");
             await _questionOptionRepository.DeleteAsync(logContext, id);
+            _logger.LogInformation($"Successfully deleted question option with ID: {id}");
             return NoContent();
         }
         catch (QuestionOptionNotFoundException ex)
         {
+            _logger.LogOperationWarning<QuestionOption>(logContext, ex.Message);
             return NotFound(ex.Message);
         }
         catch (Exception ex)

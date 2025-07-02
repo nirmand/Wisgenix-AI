@@ -10,7 +10,7 @@ namespace Wisgenix.API.Controllers;
 
 [ApiController]
 [Route("api/content")]
-public class QuestionsController : ControllerBase
+public class QuestionsController : BaseApiController
 {
     private readonly IQuestionRepository _questionRepository;
     private readonly ILoggingService _logger;
@@ -26,7 +26,7 @@ public class QuestionsController : ControllerBase
     [HttpGet("questions")]
     public async Task<ActionResult<IEnumerable<QuestionDto>>> GetQuestions()
     {
-        var logContext = new LogContext();
+        var logContext = CreateLogContext("GetQuestions");
         try
         {
             var questions = await _questionRepository.GetAllAsync(logContext);
@@ -35,7 +35,7 @@ public class QuestionsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogOperationError<Subject>(logContext, ex, "Error occurred while getting all questions");
+            _logger.LogOperationError<Question>(logContext, ex, "Error occurred while getting all questions");
             return StatusCode(500, "An error occurred while retrieving questions");
         }
     }
@@ -43,7 +43,7 @@ public class QuestionsController : ControllerBase
     [HttpGet("question/{id}")]
     public async Task<ActionResult<QuestionDto>> GetQuestion(int id)
     {
-        var logContext = new LogContext();
+        var logContext = CreateLogContext("GetQuestion");
         try
         {
             var question = await _questionRepository.GetByIdAsync(logContext, id);
@@ -52,12 +52,12 @@ public class QuestionsController : ControllerBase
         }
         catch (QuestionNotFoundException ex)
         {
-            _logger.LogOperationError<Subject>(logContext, ex, $"Question with ID: {id} was not found");
+            _logger.LogOperationWarning<Question>(logContext, ex.Message);
             return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogOperationError<Subject>(logContext, ex, "Error occurred while getting question");
+            _logger.LogOperationError<Question>(logContext, ex, "Error occurred while getting question");
             return StatusCode(500, "An error occurred while retrieving the question");
         }
     }
@@ -66,14 +66,14 @@ public class QuestionsController : ControllerBase
     public async Task<ActionResult<QuestionDto>> CreateQuestion([FromBody] CreateQuestionDto createQuestionDto)
     {
         var userName = User?.Identity?.Name ?? "system";
-        LogContext logContext = LogContext.Create("CreateQuestion", userName);
+        var logContext = CreateLogContext("CreateQuestion", userName);
         try
         {
             if (!await _questionRepository.TopicExistsAsync(logContext, createQuestionDto.TopicID))
             {
+                _logger.LogOperationWarning<Question>(logContext, $"Topic with ID {createQuestionDto.TopicID} does not exist");
                 return BadRequest($"Topic with ID {createQuestionDto.TopicID} does not exist");
             }
-
             var question = _mapper.Map<Question>(createQuestionDto);
             var createdQuestion = await _questionRepository.CreateAsync(logContext, question);
             var questionDto = _mapper.Map<QuestionDto>(createdQuestion);
@@ -81,7 +81,8 @@ public class QuestionsController : ControllerBase
         }
         catch (DuplicateQuestionException ex)
         {
-            return BadRequest(ex.Message);
+            _logger.LogOperationWarning<Question>(logContext, ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -94,14 +95,15 @@ public class QuestionsController : ControllerBase
     public async Task<IActionResult> UpdateQuestion(int id, UpdateQuestionDto updateQuestionDto)
     {
         var userName = User?.Identity?.Name ?? "system";
-        LogContext logContext = LogContext.Create("UpdateQuestion", userName);
+        var logContext = CreateLogContext("UpdateQuestion", userName);
         try
         {
             if (!await _questionRepository.TopicExistsAsync(logContext, updateQuestionDto.TopicID))
             {
+                var msg = $"Topic with ID {updateQuestionDto.TopicID} does not exist";
+                _logger.LogOperationWarning<Question>(logContext, msg);
                 throw new TopicNotFoundException(updateQuestionDto.TopicID);
             }
-
             var question = _mapper.Map<Question>(updateQuestionDto);
             question.ID = id;
             await _questionRepository.UpdateAsync(logContext, question);
@@ -109,14 +111,17 @@ public class QuestionsController : ControllerBase
         }
         catch (TopicNotFoundException ex)
         {
+            _logger.LogOperationWarning<Question>(logContext, ex.Message);
             return BadRequest(new { message = ex.Message });
         }
         catch (DuplicateQuestionException ex)
         {
+            _logger.LogOperationWarning<Question>(logContext, ex.Message);
             return BadRequest(new { message = ex.Message });
         }
         catch (QuestionNotFoundException ex)
         {
+            _logger.LogOperationWarning<Question>(logContext, ex.Message);
             return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
@@ -129,20 +134,22 @@ public class QuestionsController : ControllerBase
     [HttpDelete("delete-question/{id}")]
     public async Task<IActionResult> DeleteQuestion(int id)
     {
-        var logContext = new LogContext();
+        var logContext = CreateLogContext("DeleteQuestion");
         try
         {
+            _logger.LogInformation($"Deleting question with ID: {id}");
             await _questionRepository.DeleteAsync(logContext, id);
+            _logger.LogInformation($"Successfully deleted question with ID: {id}");
             return NoContent();
         }
         catch (QuestionNotFoundException ex)
         {
-            _logger.LogOperationError<Subject>(logContext, ex, $"Question with ID: {id} was not found");
+            _logger.LogOperationWarning<Question>(logContext, ex.Message);
             return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogOperationError<Subject>(logContext, ex, "Error occurred while deleting question");
+            _logger.LogOperationError<Question>(logContext, ex, "Error occurred while deleting question");
             return StatusCode(500, "An error occurred while deleting the question");
         }
     }
@@ -150,7 +157,7 @@ public class QuestionsController : ControllerBase
     [HttpGet("questions-by-topic/{topicId}")]
     public async Task<ActionResult<IEnumerable<QuestionDto>>> GetQuestionsByTopic(int topicId)
     {
-        var logContext = new LogContext();
+        var logContext = CreateLogContext("GetQuestionsByTopic");
         try
         {
             var questions = await _questionRepository.GetByTopicIdAsync(logContext, topicId);
@@ -159,7 +166,7 @@ public class QuestionsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogOperationError<Subject>(logContext, ex, $"Error occurred while getting questions for topic {topicId}");
+            _logger.LogOperationError<Question>(logContext, ex, $"Error occurred while getting questions for topic {topicId}");
             return StatusCode(500, "An error occurred while retrieving questions by topic");
         }
     }
