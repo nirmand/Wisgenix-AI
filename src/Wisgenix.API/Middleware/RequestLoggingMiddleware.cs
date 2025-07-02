@@ -2,6 +2,8 @@ using System.Text.Json;
 using Wisgenix.Core.Logger;
 using Microsoft.AspNetCore.Mvc;
 using SerilogContext = Serilog.Context.LogContext;
+using Serilog.AspNetCore;
+using Serilog;
 
 namespace Wisgenix.API.Middleware
 {
@@ -18,7 +20,7 @@ namespace Wisgenix.API.Middleware
             _logger = logger;
         }
 
-        public async Task InvokeAsync(HttpContext context)
+        public async Task InvokeAsync(HttpContext context, IDiagnosticContext diagnosticContext)
         {
             // Get or create correlation ID
             var correlationId = context.Request.Headers.TryGetValue(CorrelationIdHeader, out var cid)
@@ -29,6 +31,9 @@ namespace Wisgenix.API.Middleware
             context.Items[CorrelationIdItemKey] = correlationId;
             // Add to response header
             context.Response.Headers[CorrelationIdHeader] = correlationId;
+
+            // Enrich the diagnostic context for SerilogRequestLogging
+            diagnosticContext.Set("CorrelationId", correlationId);
 
             using (SerilogContext.PushProperty("CorrelationId", correlationId))
             {

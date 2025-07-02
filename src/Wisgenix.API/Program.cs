@@ -30,10 +30,11 @@ if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("lo
     // Ensure directory exists
     Directory.CreateDirectory(Path.GetDirectoryName(logPath));
 
-    logger.WriteTo.Console()
+    logger.WriteTo.Console(
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}")
           .WriteTo.File(logPath,
           rollingInterval: RollingInterval.Day,
-          outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}");
+          outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}");
 }
 else
 {
@@ -148,9 +149,18 @@ else
 
 app.UseRouting();
 app.UseMiddleware<RequestLoggingMiddleware>();
+app.UseSerilogRequestLogging(opts =>
+{
+    opts.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        if (httpContext.Items.TryGetValue("CorrelationId", out var correlationId))
+        {
+            diagnosticContext.Set("CorrelationId", correlationId?.ToString());
+        }
+    };
+});
 app.UseCors("AllowLocalhost-UI");
 app.UseAuthorization();
 app.MapControllers();
-app.UseSerilogRequestLogging();
 
 app.Run();
