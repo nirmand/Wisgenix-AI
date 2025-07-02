@@ -6,25 +6,25 @@ public static class LoggerExtensions
 {
     public static void LogOperationStart<T>(this ILoggingService logger, LogContext context, string message, params object[] args)
     {
-        logger.LogInformation("[{CorrelationId}] Starting {Operation}: {Message}", 
-            context.CorrelationId, context.Operation, string.Format(message, args));
+        logger.LogInformation("Starting {Operation}: {Message}",
+        context.Operation, string.Format(message, args));
     }
 
     public static void LogOperationSuccess<T>(this ILoggingService logger, LogContext context, string message, params object[] args)
     {
-        logger.LogInformation("[{CorrelationId}] Completed {Operation}: {Message}", 
-            context.CorrelationId, context.Operation, string.Format(message, args));
+        logger.LogInformation("Completed {Operation}: {Message}",
+        context.Operation, string.Format(message, args));
     }
 
     public static void LogOperationError<T>(this ILoggingService logger, LogContext context, Exception ex, string message, params object[] args)
     {
-        logger.LogError(ex, "[{CorrelationId}] Error in {Operation}: {Message}", 
-            context.CorrelationId, context.Operation, string.Format(message, args));
+        logger.LogError(ex, "Error in {Operation}: {Message}",
+        context.Operation, string.Format(message, args));
     }
 
     public static void LogOperationWarning<T>(this ILoggingService logger, LogContext context, string message, params object[] args)
     {
-        logger.LogWarning("[{CorrelationId}] Warning in {Operation}: {Message}",
-        context.CorrelationId, context.Operation, string.Format(message, args));
+        logger.LogWarning("Warning in {Operation}: {Message}",
+        context.Operation, string.Format(message, args));
     }
 }

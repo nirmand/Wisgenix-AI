@@ -44,8 +44,8 @@ namespace Wisgenix.API.Middleware
                     var actionDescriptor = endpoint.Metadata.GetMetadata<Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor>();
                     if (actionDescriptor != null)
                     {
-                        _logger.LogInformation("[{CorrelationId}] RequestLoggingMiddleware triggered for {Method} {Path}",
-                            correlationId, context.Request.Method, context.Request.Path);
+                        _logger.LogInformation("RequestLoggingMiddleware triggered for {Method} {Path}",
+                            context.Request.Method, context.Request.Path);
                     }
                 }
                 
