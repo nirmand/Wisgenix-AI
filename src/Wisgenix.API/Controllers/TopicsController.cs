@@ -121,7 +121,7 @@ public class TopicsController : BaseApiController
         }
         catch (TopicNotFoundException ex)
         {
-            return BadRequest(new {message = ex.Message});
+            return NotFound(ex.Message);
         }
         catch (SubjectNotFoundException ex)
         {

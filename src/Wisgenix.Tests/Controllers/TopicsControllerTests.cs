@@ -8,6 +8,7 @@ using Moq;
 using Xunit;
 using Wisgenix.DTO;
 using Wisgenix.Common.Exceptions;
+using Microsoft.AspNetCore.Http;
 
 namespace Wisgenix.Tests.Controllers;
 
@@ -26,7 +27,17 @@ public class TopicsControllerTests
         _mockLogger = new Mock<ILoggingService>();
         _mapper = new Mock<IMapper>();
         _controller = new TopicsController(_mockRepository.Object, _mockSubjectRepository.Object, _mockLogger.Object, _mapper.Object);
-        
+
+        // Setup ControllerContext with HttpContext and ClaimsPrincipal
+        var user = new System.Security.Claims.ClaimsPrincipal(
+            new System.Security.Claims.ClaimsIdentity(new[]
+            {
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "testuser")
+            }, "mock"));
+        var httpContext = new DefaultHttpContext { User = user };
+        httpContext.Items["CorrelationId"] = "test-correlation-id";
+        _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
+
         _mapper.Setup(m => m.Map<TopicDto>(It.IsAny<Topic>()))
             .Returns((Topic source) => new TopicDto 
             { 
@@ -280,7 +291,8 @@ public class TopicsControllerTests
 
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal($"Subject with ID {createDto.SubjectID} does not exist", badRequestResult.Value);
+        var errorObj = Assert.IsType<Newtonsoft.Json.Linq.JObject>(Newtonsoft.Json.Linq.JObject.FromObject(badRequestResult.Value));
+        Assert.Equal($"Subject with ID {createDto.SubjectID} was not found", errorObj["message"]?.ToString());
     }
 
     [Fact]
@@ -310,7 +322,8 @@ public class TopicsControllerTests
 
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Equal($"Subject with ID {updateDto.SubjectID} does not exist", badRequestResult.Value);
+        var errorObj = Assert.IsType<Newtonsoft.Json.Linq.JObject>(Newtonsoft.Json.Linq.JObject.FromObject(badRequestResult.Value));
+        Assert.Equal($"Subject with ID {updateDto.SubjectID} was not found", errorObj["message"]?.ToString());
     }
 
     [Fact]

@@ -55,9 +55,9 @@ public class TopicValidatorTests
     }
 
     [Theory]
-    [InlineData("Topic@Name")]
-    [InlineData("Topic#123")]
-    [InlineData("Topic-Name$")]
+    [InlineData("Topic>Name")]
+    [InlineData("<Topic123")]
+    [InlineData("Topic&Name")]
     public async Task CreateValidator_WithInvalidCharacters_ShouldFail(string topicName)
     {
         // Arrange
@@ -125,9 +125,9 @@ public class TopicValidatorTests
     }
 
     [Theory]
-    [InlineData("Topic@Name")]
-    [InlineData("Topic#123")]
-    [InlineData("Topic-Name$")]
+    [InlineData("Topic>Name")]
+    [InlineData("Topic123<")]
+    [InlineData("Topic&Name")]
     public async Task UpdateValidator_WithInvalidCharacters_ShouldFail(string topicName)
     {
         // Arrange

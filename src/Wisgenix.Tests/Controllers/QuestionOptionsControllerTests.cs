@@ -8,6 +8,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Xunit;
+using Microsoft.AspNetCore.Http;
 
 namespace Wisgenix.Tests.Controllers;
 
@@ -24,6 +25,16 @@ public class QuestionOptionsControllerTests
         _mockLogger = new Mock<ILoggingService>();
         _mockMapper = new Mock<IMapper>();
         _controller = new QuestionOptionsController(_mockRepository.Object, _mockLogger.Object, _mockMapper.Object);
+
+        // Setup ControllerContext with HttpContext and ClaimsPrincipal
+        var user = new System.Security.Claims.ClaimsPrincipal(
+            new System.Security.Claims.ClaimsIdentity(new[]
+            {
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "testuser")
+            }, "mock"));
+        var httpContext = new DefaultHttpContext { User = user };
+        httpContext.Items["CorrelationId"] = "test-correlation-id";
+        _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
         _mockMapper.Setup(m => m.Map<QuestionOptionDto>(It.IsAny<QuestionOption>()))
             .Returns((QuestionOption source) => new QuestionOptionDto

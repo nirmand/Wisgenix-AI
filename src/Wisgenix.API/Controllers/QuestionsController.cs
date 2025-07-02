@@ -72,12 +72,17 @@ public class QuestionsController : BaseApiController
             if (!await _questionRepository.TopicExistsAsync(logContext, createQuestionDto.TopicID))
             {
                 _logger.LogOperationWarning<Question>(logContext, $"Topic with ID {createQuestionDto.TopicID} does not exist");
-                return BadRequest($"Topic with ID {createQuestionDto.TopicID} does not exist");
+                throw new TopicNotFoundException(createQuestionDto.TopicID);
             }
             var question = _mapper.Map<Question>(createQuestionDto);
             var createdQuestion = await _questionRepository.CreateAsync(logContext, question);
             var questionDto = _mapper.Map<QuestionDto>(createdQuestion);
             return CreatedAtAction(nameof(GetQuestion), new { id = createdQuestion.ID }, questionDto);
+        }
+        catch (TopicNotFoundException ex)
+        {
+            _logger.LogOperationWarning<Question>(logContext, ex.Message);
+            return NotFound(ex.Message);
         }
         catch (DuplicateQuestionException ex)
         {
@@ -112,7 +117,7 @@ public class QuestionsController : BaseApiController
         catch (TopicNotFoundException ex)
         {
             _logger.LogOperationWarning<Question>(logContext, ex.Message);
-            return BadRequest(new { message = ex.Message });
+            return NotFound(ex.Message);
         }
         catch (DuplicateQuestionException ex)
         {
@@ -122,7 +127,7 @@ public class QuestionsController : BaseApiController
         catch (QuestionNotFoundException ex)
         {
             _logger.LogOperationWarning<Question>(logContext, ex.Message);
-            return BadRequest(new { message = ex.Message });
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {

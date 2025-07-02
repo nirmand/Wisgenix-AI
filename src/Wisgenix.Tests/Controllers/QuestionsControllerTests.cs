@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Xunit;
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
 
 namespace Wisgenix.Tests.Controllers;
 
@@ -25,6 +26,16 @@ public class QuestionsControllerTests
         _mockLogger = new Mock<ILoggingService>();
         _mockMapper = new Mock<IMapper>();
         _controller = new QuestionsController(_mockRepository.Object, _mockLogger.Object, _mockMapper.Object);
+
+        // Setup ControllerContext with HttpContext and ClaimsPrincipal
+        var user = new System.Security.Claims.ClaimsPrincipal(
+            new System.Security.Claims.ClaimsIdentity(new[]
+            {
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "testuser")
+            }, "mock"));
+        var httpContext = new DefaultHttpContext { User = user };
+        httpContext.Items["CorrelationId"] = "test-correlation-id";
+        _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
     }
 
     [Fact]
@@ -185,7 +196,7 @@ public class QuestionsControllerTests
     }
 
     [Fact]
-    public async Task CreateQuestion_WithInvalidTopicId_ReturnsBadRequest()
+    public async Task CreateQuestion_WithInvalidTopicId_ReturnsNotFound()
     {
         // Arrange
         var createDto = new CreateQuestionDto { TopicID = 1 };
@@ -195,8 +206,8 @@ public class QuestionsControllerTests
         var result = await _controller.CreateQuestion(createDto);
 
         // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("Topic with ID 1 does not exist", badRequestResult.Value);
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        Assert.Equal($"Topic with ID {createDto.TopicID} was not found", notFoundResult.Value);
     }
 
     [Fact]
@@ -443,7 +454,7 @@ public class QuestionsControllerTests
     }
 
     [Fact]
-    public async Task UpdateQuestion_WithInvalidTopicId_ReturnsBadRequest()
+    public async Task UpdateQuestion_WithInvalidTopicId_ReturnsNotFound()
     {
         // Arrange
         var updateDto = new UpdateQuestionDto
@@ -458,8 +469,8 @@ public class QuestionsControllerTests
         var result = await _controller.UpdateQuestion(1, updateDto);
 
         // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Equal("Topic with ID 1 does not exist", badRequestResult.Value);
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal($"Topic with ID {updateDto.TopicID} was not found", notFoundResult.Value);
     }
 
     [Fact]

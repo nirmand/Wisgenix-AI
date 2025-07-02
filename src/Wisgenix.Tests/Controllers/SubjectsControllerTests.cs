@@ -8,6 +8,7 @@ using Moq;
 using Xunit;
 using Wisgenix.DTO;
 using Wisgenix.Common.Exceptions;
+using Microsoft.AspNetCore.Http;
 
 namespace Wisgenix.Tests.Controllers;
 
@@ -24,7 +25,17 @@ public class SubjectsControllerTests
         _mockLogger = new Mock<ILoggingService>();
         _mapper = new Mock<IMapper>();
         _controller = new SubjectsController(_mockRepository.Object, _mockLogger.Object, _mapper.Object);
-        
+
+        // Setup ControllerContext with HttpContext and ClaimsPrincipal
+        var user = new System.Security.Claims.ClaimsPrincipal(
+            new System.Security.Claims.ClaimsIdentity(new[]
+            {
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "testuser")
+            }, "mock"));
+        var httpContext = new DefaultHttpContext { User = user };
+        httpContext.Items["CorrelationId"] = "test-correlation-id";
+        _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
+
         _mapper.Setup(m => m.Map<SubjectDto>(It.IsAny<Subject>()))
             .Returns((Subject source) => new SubjectDto
             {
