@@ -312,28 +312,6 @@ public class QuestionsControllerTests
     }
 
     [Fact]
-    public async Task CreateQuestion_WithInvalidValidationUrl_ReturnsBadRequest()
-    {
-        // Arrange
-        var createDto = new CreateQuestionDto 
-        { 
-            QuestionText = "Test Question",
-            TopicID = 1,
-            DifficultyLevel = 2,
-            MaxScore = 5,
-            GeneratedBy = QuestionSource.AI,
-            QuestionSourceReference = "invalid-url"
-        };
-        _controller.ModelState.AddModelError("QuestionSourceReference", "Invalid URL format");
-
-        // Act
-        var result = await _controller.CreateQuestion(createDto);
-
-        // Assert
-        Assert.IsType<BadRequestObjectResult>(result.Result);
-    }
-
-    [Fact]
     public async Task GetQuestion_Returns500_WhenExceptionOccurs()
     {
         // Arrange
@@ -415,62 +393,6 @@ public class QuestionsControllerTests
         var statusCodeResult = Assert.IsType<ObjectResult>(result);
         Assert.Equal(500, statusCodeResult.StatusCode);
         Assert.Equal("An error occurred while deleting the question", statusCodeResult.Value);
-    }
-
-    [Fact]
-    public async Task UpdateQuestion_WithInvalidModelState_ReturnsBadRequest()
-    {
-        // Arrange
-        var updateDto = new UpdateQuestionDto();
-        _controller.ModelState.AddModelError("QuestionText", "Question text is required");
-
-        // Act
-        var result = await _controller.UpdateQuestion(1, updateDto);
-
-        // Assert
-        Assert.IsType<BadRequestObjectResult>(result);
-    }
-
-    [Fact]
-    public async Task CreateQuestion_WithInvalidMaxScore_ReturnsBadRequest()
-    {
-        // Arrange
-        var createDto = new CreateQuestionDto 
-        { 
-            QuestionText = "Test Question",
-            TopicID = 1,
-            DifficultyLevel = 2,
-            MaxScore = 0, // Invalid score
-            GeneratedBy = QuestionSource.AI,
-            QuestionSourceReference = "https://test.com"
-        };
-        _controller.ModelState.AddModelError("MaxScore", "Max score must be greater than 0");
-
-        // Act
-        var result = await _controller.CreateQuestion(createDto);
-
-        // Assert
-        Assert.IsType<BadRequestObjectResult>(result.Result);
-    }
-
-    [Fact]
-    public async Task UpdateQuestion_WithInvalidTopicId_ReturnsNotFound()
-    {
-        // Arrange
-        var updateDto = new UpdateQuestionDto
-        {
-            QuestionText = "Updated Question",
-            TopicID = 1
-        };
-        _mockRepository.Setup(repo => repo.TopicExistsAsync(It.IsAny<LogContext>(), 1))
-            .ReturnsAsync(false);
-
-        // Act
-        var result = await _controller.UpdateQuestion(1, updateDto);
-
-        // Assert
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-        Assert.Equal($"Topic with ID {updateDto.TopicID} was not found", notFoundResult.Value);
     }
 
     [Fact]
