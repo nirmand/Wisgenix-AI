@@ -11,7 +11,7 @@ namespace Wisgenix.API.Controllers;
 
 [ApiController]
 [Route("api/content")]
-public class TopicsController : ControllerBase
+public class TopicsController : BaseApiController
 {
     private readonly ITopicRepository _topicRepository;
     private readonly ISubjectRepository _subjectRepository;
@@ -29,7 +29,7 @@ public class TopicsController : ControllerBase
     [HttpGet("topics")]
     public async Task<ActionResult<IEnumerable<TopicDto>>> GetTopics()
     {
-        LogContext logContext = LogContext.Create("GetTopics");
+        var logContext = CreateLogContext("GetTopics");
         try
         {
             var topics = await _topicRepository.GetAllAsync(logContext);
@@ -46,7 +46,7 @@ public class TopicsController : ControllerBase
     [HttpGet("get-topic/{id}")]
     public async Task<ActionResult<TopicDto>> GetTopic(int id)
     {
-        LogContext logContext = LogContext.Create("GetTopic");
+        var logContext = CreateLogContext("GetTopic");
         try
         {
             var topic = await _topicRepository.GetByIdAsync(logContext, id);
@@ -67,8 +67,7 @@ public class TopicsController : ControllerBase
     [HttpPost("create-topic")]
     public async Task<ActionResult<TopicDto>> CreateTopic([FromBody] CreateTopicDto createTopicDto)
     {
-        var userName = User?.Identity?.Name ?? "system";
-        LogContext logContext = LogContext.Create("CreateTopic", userName);
+        var logContext = CreateLogContext("CreateTopic");
         try
         {
             if (!await _subjectRepository.SubjectExistsAsync(logContext, createTopicDto.SubjectID))
@@ -102,8 +101,7 @@ public class TopicsController : ControllerBase
     [HttpPut("update-topic/{id}")]
     public async Task<IActionResult> UpdateTopic(int id, UpdateTopicDto updateTopicDto)
     {
-        var userName = User?.Identity?.Name ?? "system";
-        LogContext logContext = LogContext.Create("UpdateTopic", userName);
+        var logContext = CreateLogContext("UpdateTopic");
         try
         {
             if (!await _subjectRepository.SubjectExistsAsync(logContext, updateTopicDto.SubjectID))
@@ -143,7 +141,7 @@ public class TopicsController : ControllerBase
     [HttpDelete("delete-topic/{id}")]
     public async Task<IActionResult> DeleteTopic(int id)
     {
-        LogContext logContext = LogContext.Create("DeleteTopic");
+        var logContext = CreateLogContext("DeleteTopic");
         try
         {
             _logger.LogInformation("Deleting topic with ID: {Id}", id);
@@ -165,7 +163,7 @@ public class TopicsController : ControllerBase
     [HttpGet("topics-by-subject/{subjectId}")]
     public async Task<ActionResult<IEnumerable<TopicDto>>> GetTopicsBySubject(int subjectId)
     {
-        LogContext logContext = LogContext.Create("GetTopicsBySubject");
+        var logContext = CreateLogContext("GetTopicsBySubject");
         try
         {
             var topics = await _topicRepository.GetBySubjectIdAsync(logContext, subjectId);

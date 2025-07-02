@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Wisgenix.Core.Logger;
 using Microsoft.AspNetCore.Mvc;
+using SerilogContext = Serilog.Context.LogContext;
 
 namespace Wisgenix.API.Middleware
 {
@@ -8,6 +9,8 @@ namespace Wisgenix.API.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<RequestLoggingMiddleware> _logger;
+        private const string CorrelationIdHeader = "X-Correlation-ID";
+        private const string CorrelationIdItemKey = "CorrelationId";
 
         public RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
         {
@@ -17,18 +20,32 @@ namespace Wisgenix.API.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Try to get the endpoint and model state
-            var endpoint = context.GetEndpoint();
-            if (endpoint != null)
+            // Get or create correlation ID
+            var correlationId = context.Request.Headers.TryGetValue(CorrelationIdHeader, out var cid)
+                ? cid.ToString()
+                : Guid.NewGuid().ToString();
+
+            // Store in HttpContext.Items for downstream access
+            context.Items[CorrelationIdItemKey] = correlationId;
+            // Add to response header
+            context.Response.Headers[CorrelationIdHeader] = correlationId;
+
+            using (SerilogContext.PushProperty("CorrelationId", correlationId))
             {
-                var actionDescriptor = endpoint.Metadata.GetMetadata<Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor>();
-                if (actionDescriptor != null)
+                // Try to get the endpoint and model state
+                var endpoint = context.GetEndpoint();
+                if (endpoint != null)
                 {
-                    _logger.LogInformation("RequestLoggingMiddleware triggered for {Method} {Path}", context.Request.Method, context.Request.Path);
+                    var actionDescriptor = endpoint.Metadata.GetMetadata<Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor>();
+                    if (actionDescriptor != null)
+                    {
+                        _logger.LogInformation("[{CorrelationId}] RequestLoggingMiddleware triggered for {Method} {Path}",
+                            correlationId, context.Request.Method, context.Request.Path);
+                    }
                 }
+                
+                await _next(context);
             }
-            
-            await _next(context);
         }
     }
 }

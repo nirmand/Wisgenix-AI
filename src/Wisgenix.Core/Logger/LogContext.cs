@@ -8,11 +8,11 @@ public class LogContext
     public string Operation { get; set; } = string.Empty;
     public string? UserName { get; set; }
 
-    public static LogContext Create(string operation, string? userName = null)
+    public static LogContext Create(string operation, string? userName = null, string? correlationId = null)
     {
         return new LogContext
         {
-            CorrelationId = Guid.NewGuid().ToString(),
+            CorrelationId = correlationId ?? Guid.NewGuid().ToString(),
             Operation = operation,
             UserName = userName
         };
