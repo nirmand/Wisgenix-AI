@@ -413,3 +413,4 @@ db/*
 # Deployment version for testing
 localhost/*
 **/Wisgenix.Web/build_output/*
+src/Content.API/content.db
