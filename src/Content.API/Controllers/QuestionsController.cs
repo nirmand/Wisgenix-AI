@@ -117,18 +117,25 @@ public class QuestionsController : ControllerBase
             return BadRequest(validationResult.Errors);
         }
 
-        var command = new UpdateQuestionCommand(
-            id,
-            request.QuestionText, 
-            request.TopicId, 
-            request.DifficultyLevel, 
-            request.MaxScore, 
-            request.GeneratedBy, 
-            request.QuestionSourceReference);
-        
-        var result = await _mediator.Send(command);
-        
-        return Ok(result);
+        try
+        {
+            var command = new UpdateQuestionCommand(
+                id,
+                request.QuestionText,
+                request.TopicId,
+                request.DifficultyLevel,
+                request.MaxScore,
+                request.GeneratedBy,
+                request.QuestionSourceReference);
+
+            var result = await _mediator.Send(command);
+
+            return Ok(result);
+        }
+        catch (Wisgenix.SharedKernel.Domain.Exceptions.EntityNotFoundException)
+        {
+            return NotFound($"Question with ID {id} not found");
+        }
     }
 
     /// <summary>
@@ -137,9 +144,16 @@ public class QuestionsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteQuestion(int id)
     {
-        var command = new DeleteQuestionCommand(id);
-        await _mediator.Send(command);
-        
-        return NoContent();
+        try
+        {
+            var command = new DeleteQuestionCommand(id);
+            await _mediator.Send(command);
+
+            return NoContent();
+        }
+        catch (Wisgenix.SharedKernel.Domain.Exceptions.EntityNotFoundException)
+        {
+            return NotFound($"Question with ID {id} not found");
+        }
     }
 }

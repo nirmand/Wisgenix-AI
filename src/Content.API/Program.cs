@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MediatR;
 using Serilog;
+using Serilog.Enrichers.CorrelationId;
 using Content.Infrastructure.Data;
 using Content.Domain.Repositories;
 using Content.Infrastructure.Repositories;
@@ -13,11 +14,28 @@ using Wisgenix.SharedKernel.Infrastructure.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Serilog
+// Configure Serilog with configurable path and correlation IDs
+var logsPath = builder.Configuration["LogsPath"] ?? "../../../logs";
+var fullLogsPath = Path.GetFullPath(logsPath);
+
+// Ensure logs directory exists
+if (!Directory.Exists(fullLogsPath))
+{
+    Directory.CreateDirectory(fullLogsPath);
+}
+
 Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
-    .WriteTo.Console()
-    .WriteTo.File("logs/content-api-.log", rollingInterval: RollingInterval.Day)
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.WithCorrelationId()
+    .Enrich.FromLogContext()
+    .Enrich.WithEnvironmentName()
+    .Enrich.WithThreadId()
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] {Message:lj} {Properties:j}{NewLine}{Exception}")
+    .WriteTo.File(
+        path: Path.Combine(fullLogsPath, "wisgenix-.txt"),
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 7,
+        outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] [{CorrelationId}] {Message:lj} {Properties:j}{NewLine}{Exception}")
     .CreateLogger();
 
 builder.Host.UseSerilog();
@@ -28,6 +46,22 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "Content API", Version = "v1" });
+});
+
+// Add correlation ID services
+builder.Services.AddHttpContextAccessor();
+
+// Add CORS
+var corsOrigins = builder.Configuration.GetSection("CORS:Origins").Get<string[]>() ?? new[] { "http://localhost:3000" };
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins(corsOrigins)
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
 });
 
 // Add DbContext
@@ -76,7 +110,26 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Add Serilog request logging middleware
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+    options.GetLevel = (httpContext, elapsed, ex) => ex != null
+        ? Serilog.Events.LogEventLevel.Error
+        : elapsed > 1000
+            ? Serilog.Events.LogEventLevel.Warning
+            : Serilog.Events.LogEventLevel.Information;
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+        diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
+        diagnosticContext.Set("UserAgent", httpContext.Request.Headers["User-Agent"].FirstOrDefault() ?? "Unknown");
+        diagnosticContext.Set("RemoteIP", httpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown");
+    };
+});
+
 app.UseHttpsRedirection();
+app.UseCors();
 app.UseAuthorization();
 app.MapControllers();
 

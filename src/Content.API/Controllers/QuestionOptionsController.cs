@@ -110,10 +110,17 @@ public class QuestionOptionsController : ControllerBase
             return BadRequest(validationResult.Errors);
         }
 
-        var command = new UpdateQuestionOptionCommand(id, request.OptionText, request.QuestionId, request.IsCorrect);
-        var result = await _mediator.Send(command);
-        
-        return Ok(result);
+        try
+        {
+            var command = new UpdateQuestionOptionCommand(id, request.OptionText, request.QuestionId, request.IsCorrect);
+            var result = await _mediator.Send(command);
+
+            return Ok(result);
+        }
+        catch (Wisgenix.SharedKernel.Domain.Exceptions.EntityNotFoundException)
+        {
+            return NotFound($"Question option with ID {id} not found");
+        }
     }
 
     /// <summary>
@@ -122,9 +129,16 @@ public class QuestionOptionsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteQuestionOption(int id)
     {
-        var command = new DeleteQuestionOptionCommand(id);
-        await _mediator.Send(command);
-        
-        return NoContent();
+        try
+        {
+            var command = new DeleteQuestionOptionCommand(id);
+            await _mediator.Send(command);
+
+            return NoContent();
+        }
+        catch (Wisgenix.SharedKernel.Domain.Exceptions.EntityNotFoundException)
+        {
+            return NotFound($"Question option with ID {id} not found");
+        }
     }
 }
