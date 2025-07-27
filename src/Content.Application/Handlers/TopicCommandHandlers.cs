@@ -290,3 +290,53 @@ public class GetTopicByIdQueryHandler : IQueryHandler<GetTopicByIdQuery, GetTopi
         }
     }
 }
+
+/// <summary>
+/// Handler for GetTopicsBySubjectIdQuery
+/// </summary>
+public class GetTopicsBySubjectIdQueryHandler : IQueryHandler<GetTopicsBySubjectIdQuery, GetTopicsResponse>
+{
+    private readonly ITopicRepository _topicRepository;
+    private readonly IMapper _mapper;
+    private readonly ILoggingService _logger;
+
+    public GetTopicsBySubjectIdQueryHandler(
+        ITopicRepository topicRepository,
+        IMapper mapper,
+        ILoggingService logger)
+    {
+        _topicRepository = topicRepository;
+        _mapper = mapper;
+        _logger = logger;
+    }
+
+    public async Task<GetTopicsResponse> Handle(GetTopicsBySubjectIdQuery request, CancellationToken cancellationToken)
+    {
+        var logContext = LogContext.Create("GetTopicsBySubjectId");
+
+        try
+        {
+            _logger.LogOperationStart<Topic>(logContext, "Retrieving topics for subject ID: {SubjectId}", request.SubjectId);
+
+            var topics = request.IncludeQuestions
+                ? await _topicRepository.GetTopicsWithQuestionsBySubjectIdAsync(request.SubjectId, cancellationToken)
+                : await _topicRepository.GetBySubjectIdAsync(request.SubjectId, cancellationToken);
+
+            var topicDtos = _mapper.Map<IEnumerable<GetTopicResponse>>(topics);
+
+            _logger.LogOperationSuccess<Topic>(logContext, "Successfully retrieved {Count} topics for subject ID: {SubjectId}",
+                topics.Count(), request.SubjectId);
+
+            return new GetTopicsResponse
+            {
+                Topics = topicDtos,
+                TotalCount = topics.Count()
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogOperationError<Topic>(logContext, ex, "Error retrieving topics for subject ID: {SubjectId}", request.SubjectId);
+            throw;
+        }
+    }
+}

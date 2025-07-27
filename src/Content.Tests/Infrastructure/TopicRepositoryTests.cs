@@ -10,14 +10,17 @@ public class TopicRepositoryTests : IDisposable
 {
     private readonly ContentDbContext _context;
     private readonly TopicRepository _repository;
+    private readonly string _dbName;
 
     public TopicRepositoryTests()
     {
+        _dbName = $"TestDb_{Guid.NewGuid()}.db";
         var options = new DbContextOptionsBuilder<ContentDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseSqlite($"Data Source={_dbName}")
             .Options;
 
         _context = new ContentDbContext(options);
+        _context.Database.EnsureCreated(); // Create the database schema
         _repository = new TopicRepository(_context);
     }
 
@@ -267,5 +270,18 @@ public class TopicRepositoryTests : IDisposable
     public void Dispose()
     {
         _context.Dispose();
+
+        // Clean up test database file
+        if (File.Exists(_dbName))
+        {
+            try
+            {
+                File.Delete(_dbName);
+            }
+            catch
+            {
+                // Ignore cleanup errors
+            }
+        }
     }
 }

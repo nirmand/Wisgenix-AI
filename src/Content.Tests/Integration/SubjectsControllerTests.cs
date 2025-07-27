@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Content.Application.DTOs;
@@ -9,34 +10,54 @@ using Xunit;
 
 namespace Content.Tests.Integration;
 
-public class SubjectsControllerTests : IClassFixture<WebApplicationFactory<Program>>
+public class SubjectsControllerTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
 {
     private readonly WebApplicationFactory<Program> _factory;
     private readonly HttpClient _client;
+    private readonly string _dbName;
 
     public SubjectsControllerTests(WebApplicationFactory<Program> factory)
     {
+        _dbName = $"TestDb_{Guid.NewGuid()}.db";
         _factory = factory.WithWebHostBuilder(builder =>
         {
             builder.ConfigureServices(services =>
             {
-                // Remove the existing DbContext registration
-                var descriptor = services.SingleOrDefault(
-                    d => d.ServiceType == typeof(DbContextOptions<ContentDbContext>));
-                if (descriptor != null)
+                // Remove all DbContext related services
+                var descriptorsToRemove = services.Where(d =>
+                    d.ServiceType == typeof(DbContextOptions<ContentDbContext>) ||
+                    d.ServiceType == typeof(ContentDbContext) ||
+                    d.ServiceType.IsGenericType && d.ServiceType.GetGenericTypeDefinition() == typeof(DbContextOptions<>))
+                    .ToList();
+
+                foreach (var descriptor in descriptorsToRemove)
                 {
                     services.Remove(descriptor);
                 }
 
-                // Add in-memory database for testing
+                // Add SQLite file-based database for testing
                 services.AddDbContext<ContentDbContext>(options =>
                 {
-                    options.UseInMemoryDatabase("TestDb");
+                    options.UseSqlite($"Data Source={_dbName}");
                 });
             });
+
+            // Set environment variables to prevent database initialization
+            builder.UseSetting("ASPNETCORE_ENVIRONMENT", "Testing");
+            builder.UseSetting("SKIP_DB_INIT", "true");
         });
 
         _client = _factory.CreateClient();
+
+        // Initialize the database for each test
+        InitializeDatabase();
+    }
+
+    private void InitializeDatabase()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
+        context.Database.EnsureCreated();
     }
 
     [Fact]
@@ -176,5 +197,24 @@ public class SubjectsControllerTests : IClassFixture<WebApplicationFactory<Progr
         // Verify subject is deleted
         var getResponse = await _client.GetAsync($"/api/content/subjects/{createdSubject.Id}");
         Assert.Equal(System.Net.HttpStatusCode.NotFound, getResponse.StatusCode);
+    }
+
+    public void Dispose()
+    {
+        _client?.Dispose();
+        _factory?.Dispose();
+
+        // Clean up test database file
+        if (File.Exists(_dbName))
+        {
+            try
+            {
+                File.Delete(_dbName);
+            }
+            catch
+            {
+                // Ignore cleanup errors
+            }
+        }
     }
 }

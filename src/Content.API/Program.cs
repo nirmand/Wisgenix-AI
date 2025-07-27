@@ -80,11 +80,45 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
-// Ensure database is created
-using (var scope = app.Services.CreateScope())
+// Ensure database directory and database are created (skip for testing environment)
+var skipDbInit = Environment.GetEnvironmentVariable("SKIP_DB_INIT") == "true" ||
+                 app.Environment.IsEnvironment("Testing");
+
+if (!skipDbInit)
 {
-    var context = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
-    context.Database.EnsureCreated();
+    try
+    {
+        using (var scope = app.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
+            var connectionString = context.Database.GetConnectionString();
+
+            // Extract the database file path from connection string
+            if (connectionString != null && connectionString.Contains("Data Source="))
+            {
+                var dataSourceStart = connectionString.IndexOf("Data Source=") + "Data Source=".Length;
+                var dataSourceEnd = connectionString.IndexOf(';', dataSourceStart);
+                if (dataSourceEnd == -1) dataSourceEnd = connectionString.Length;
+
+                var dbPath = connectionString[dataSourceStart..dataSourceEnd].Trim();
+                var dbDirectory = Path.GetDirectoryName(Path.GetFullPath(dbPath));
+
+                // Create directory if it doesn't exist
+                if (!string.IsNullOrEmpty(dbDirectory) && !Directory.Exists(dbDirectory))
+                {
+                    Directory.CreateDirectory(dbDirectory);
+                    Console.WriteLine($"Created database directory: {dbDirectory}");
+                }
+            }
+
+            context.Database.EnsureCreated();
+            Console.WriteLine($"Database initialized successfully.");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Database initialization skipped due to error: {ex.Message}");
+    }
 }
 
 app.Run();

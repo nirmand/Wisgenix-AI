@@ -65,4 +65,14 @@ public class TopicRepository : BaseRepository<Topic>, ITopicRepository
             .Include(t => t.Questions)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IEnumerable<Topic>> GetTopicsWithQuestionsBySubjectIdAsync(int subjectId, CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .Include(t => t.Subject)
+            .Include(t => t.Questions)
+            .ThenInclude(q => q.Options)
+            .Where(t => t.SubjectId == subjectId)
+            .ToListAsync(cancellationToken);
+    }
 }

@@ -11,6 +11,7 @@ public interface ITopicRepository : IRepository<Topic>
     Task<IEnumerable<Topic>> GetBySubjectIdAsync(int subjectId, CancellationToken cancellationToken = default);
     Task<Topic?> GetByNameAndSubjectAsync(string topicName, int subjectId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Topic>> GetTopicsWithQuestionsAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<Topic>> GetTopicsWithQuestionsBySubjectIdAsync(int subjectId, CancellationToken cancellationToken = default);
     Task<bool> ExistsByNameAndSubjectAsync(string topicName, int subjectId, CancellationToken cancellationToken = default);
     Task<bool> ExistsByNameAndSubjectAsync(string topicName, int subjectId, int excludeId, CancellationToken cancellationToken = default);
 }
