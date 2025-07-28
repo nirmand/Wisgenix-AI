@@ -1,4 +1,4 @@
-using Wisgenix.SharedKernel.Domain.Exceptions;
+using Wisgenix.SharedKernel.Exceptions;
 
 namespace Content.Domain.ValueObjects;
 
@@ -21,7 +21,7 @@ public class OptionText : ValueObject
     /// </summary>
     /// <param name="value">The option text value</param>
     /// <returns>A valid OptionText instance</returns>
-    /// <exception cref="BusinessRuleViolationException">Thrown when validation fails</exception>
+    /// <exception cref="DomainValidationException">Thrown when validation fails</exception>
     public static OptionText Create(string value)
     {
         ValidateOptionText(value);
@@ -32,17 +32,17 @@ public class OptionText : ValueObject
     /// Validates an option text value
     /// </summary>
     /// <param name="value">The value to validate</param>
-    /// <exception cref="BusinessRuleViolationException">Thrown when validation fails</exception>
+    /// <exception cref="DomainValidationException">Thrown when validation fails</exception>
     private static void ValidateOptionText(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new BusinessRuleViolationException("Option text cannot be empty");
+            throw new DomainValidationException("Option text cannot be empty");
         }
 
         if (value.Length > MaxLength)
         {
-            throw new BusinessRuleViolationException($"Option text cannot exceed {MaxLength} characters");
+            throw new DomainValidationException("Option text cannot exceed {0} characters", MaxLength);
         }
     }
 
@@ -59,7 +59,7 @@ public class OptionText : ValueObject
             optionText = Create(value);
             return true;
         }
-        catch (BusinessRuleViolationException)
+        catch (DomainValidationException)
         {
             optionText = null;
             return false;

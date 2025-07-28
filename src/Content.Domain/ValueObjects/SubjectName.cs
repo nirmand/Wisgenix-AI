@@ -1,4 +1,4 @@
-using Wisgenix.SharedKernel.Domain.Exceptions;
+using Wisgenix.SharedKernel.Exceptions;
 
 namespace Content.Domain.ValueObjects;
 
@@ -22,7 +22,7 @@ public class SubjectName : ValueObject
     /// </summary>
     /// <param name="value">The subject name value</param>
     /// <returns>A valid SubjectName instance</returns>
-    /// <exception cref="BusinessRuleViolationException">Thrown when validation fails</exception>
+    /// <exception cref="DomainValidationException">Thrown when validation fails</exception>
     public static SubjectName Create(string value)
     {
         ValidateSubjectName(value);
@@ -33,22 +33,22 @@ public class SubjectName : ValueObject
     /// Validates a subject name value
     /// </summary>
     /// <param name="value">The value to validate</param>
-    /// <exception cref="BusinessRuleViolationException">Thrown when validation fails</exception>
+    /// <exception cref="DomainValidationException">Thrown when validation fails</exception>
     private static void ValidateSubjectName(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new BusinessRuleViolationException("Subject name cannot be empty");
+            throw new DomainValidationException("Subject name cannot be empty");
         }
 
         if (value.Length > MaxLength)
         {
-            throw new BusinessRuleViolationException($"Subject name cannot exceed {MaxLength} characters");
+            throw new DomainValidationException("Subject name cannot exceed {0} characters", MaxLength);
         }
 
         if (ContainsInvalidCharacters(value))
         {
-            throw new BusinessRuleViolationException("Subject name contains invalid characters");
+            throw new DomainValidationException("Subject name contains invalid characters");
         }
     }
 
@@ -73,7 +73,7 @@ public class SubjectName : ValueObject
             subjectName = Create(value);
             return true;
         }
-        catch (BusinessRuleViolationException)
+        catch (DomainValidationException)
         {
             subjectName = null;
             return false;

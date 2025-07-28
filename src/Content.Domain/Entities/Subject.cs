@@ -1,5 +1,5 @@
 using Wisgenix.SharedKernel.Domain;
-using Wisgenix.SharedKernel.Domain.Exceptions;
+using Wisgenix.SharedKernel.Exceptions;
 using Content.Domain.Events;
 using Content.Domain.ValueObjects;
 

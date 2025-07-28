@@ -1,4 +1,4 @@
-using Wisgenix.SharedKernel.Domain.Exceptions;
+using Wisgenix.SharedKernel.Exceptions;
 
 namespace Content.Domain.ValueObjects;
 
@@ -22,7 +22,7 @@ public class TopicName : ValueObject
     /// </summary>
     /// <param name="value">The topic name value</param>
     /// <returns>A valid TopicName instance</returns>
-    /// <exception cref="BusinessRuleViolationException">Thrown when validation fails</exception>
+    /// <exception cref="DomainValidationException">Thrown when validation fails</exception>
     public static TopicName Create(string value)
     {
         ValidateTopicName(value);
@@ -33,22 +33,22 @@ public class TopicName : ValueObject
     /// Validates a topic name value
     /// </summary>
     /// <param name="value">The value to validate</param>
-    /// <exception cref="BusinessRuleViolationException">Thrown when validation fails</exception>
+    /// <exception cref="DomainValidationException">Thrown when validation fails</exception>
     private static void ValidateTopicName(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new BusinessRuleViolationException("Topic name cannot be empty");
+            throw new DomainValidationException("Topic name cannot be empty");
         }
 
         if (value.Length > MaxLength)
         {
-            throw new BusinessRuleViolationException($"Topic name cannot exceed {MaxLength} characters");
+            throw new DomainValidationException("Topic name cannot exceed {0} characters", MaxLength);
         }
 
         if (ContainsInvalidCharacters(value))
         {
-            throw new BusinessRuleViolationException("Topic name contains invalid characters");
+            throw new DomainValidationException("Topic name contains invalid characters");
         }
     }
 
@@ -73,7 +73,7 @@ public class TopicName : ValueObject
             topicName = Create(value);
             return true;
         }
-        catch (BusinessRuleViolationException)
+        catch (DomainValidationException)
         {
             topicName = null;
             return false;

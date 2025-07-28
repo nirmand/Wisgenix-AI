@@ -1,6 +1,6 @@
 using Content.Domain.Entities;
 using Content.Domain.Events;
-using Wisgenix.SharedKernel.Domain.Exceptions;
+using Wisgenix.SharedKernel.Exceptions;
 using Wisgenix.SharedKernel.Domain.Enums;
 using Xunit;
 
@@ -33,7 +33,7 @@ public class TopicTests
     public void Constructor_WithInvalidName_ShouldThrowException(string topicName)
     {
         // Act & Assert
-        Assert.Throws<BusinessRuleViolationException>(() => new Topic(topicName, 1));
+        Assert.Throws<DomainValidationException>(() => new Topic(topicName, 1));
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class TopicTests
         var topicName = new string('a', 201);
 
         // Act & Assert
-        Assert.Throws<BusinessRuleViolationException>(() => new Topic(topicName, 1));
+        Assert.Throws<DomainValidationException>(() => new Topic(topicName, 1));
     }
 
     [Theory]
@@ -55,7 +55,7 @@ public class TopicTests
     public void Constructor_WithInvalidCharacters_ShouldThrowException(string topicName)
     {
         // Act & Assert
-        Assert.Throws<BusinessRuleViolationException>(() => new Topic(topicName, 1));
+        Assert.Throws<DomainValidationException>(() => new Topic(topicName, 1));
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class TopicTests
         var topic = new Topic("Algebra", 1);
 
         // Act & Assert
-        Assert.Throws<BusinessRuleViolationException>(() => topic.UpdateTopicName(newName));
+        Assert.Throws<DomainValidationException>(() => topic.UpdateTopicName(newName));
     }
 
     [Fact]

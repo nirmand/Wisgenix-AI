@@ -1,4 +1,4 @@
-using Wisgenix.SharedKernel.Domain.Exceptions;
+using Wisgenix.SharedKernel.Exceptions;
 
 namespace Content.Domain.ValueObjects;
 
@@ -22,7 +22,7 @@ public class DifficultyLevel : ValueObject
     /// </summary>
     /// <param name="value">The difficulty level value</param>
     /// <returns>A valid DifficultyLevel instance</returns>
-    /// <exception cref="BusinessRuleViolationException">Thrown when validation fails</exception>
+    /// <exception cref="DomainValidationException">Thrown when validation fails</exception>
     public static DifficultyLevel Create(int value)
     {
         ValidateDifficultyLevel(value);
@@ -33,12 +33,12 @@ public class DifficultyLevel : ValueObject
     /// Validates a difficulty level value
     /// </summary>
     /// <param name="value">The value to validate</param>
-    /// <exception cref="BusinessRuleViolationException">Thrown when validation fails</exception>
+    /// <exception cref="DomainValidationException">Thrown when validation fails</exception>
     private static void ValidateDifficultyLevel(int value)
     {
         if (value < MinValue || value > MaxValue)
         {
-            throw new BusinessRuleViolationException($"Difficulty level must be between {MinValue} and {MaxValue}");
+            throw new DomainValidationException("Difficulty level must be between {0} and {1}", MinValue, MaxValue);
         }
     }
 
@@ -55,7 +55,7 @@ public class DifficultyLevel : ValueObject
             difficultyLevel = Create(value);
             return true;
         }
-        catch (BusinessRuleViolationException)
+        catch (DomainValidationException)
         {
             difficultyLevel = null;
             return false;

@@ -1,6 +1,6 @@
 using Content.Domain.Entities;
 using Content.Domain.Events;
-using Wisgenix.SharedKernel.Domain.Exceptions;
+using Wisgenix.SharedKernel.Exceptions;
 using Wisgenix.SharedKernel.Domain.Enums;
 using Xunit;
 
@@ -41,7 +41,7 @@ public class QuestionTests
     public void Constructor_WithInvalidQuestionText_ShouldThrowException(string questionText)
     {
         // Act & Assert
-        Assert.Throws<BusinessRuleViolationException>(() => 
+        Assert.Throws<DomainValidationException>(() =>
             new Question(questionText, 1, 2, 5, QuestionSource.Manual));
     }
 
@@ -52,7 +52,7 @@ public class QuestionTests
         var questionText = new string('a', 1001);
 
         // Act & Assert
-        Assert.Throws<BusinessRuleViolationException>(() => 
+        Assert.Throws<DomainValidationException>(() =>
             new Question(questionText, 1, 2, 5, QuestionSource.Manual));
     }
 
@@ -63,7 +63,7 @@ public class QuestionTests
     public void Constructor_WithInvalidDifficultyLevel_ShouldThrowException(int difficultyLevel)
     {
         // Act & Assert
-        Assert.Throws<BusinessRuleViolationException>(() => 
+        Assert.Throws<DomainValidationException>(() =>
             new Question("Valid question?", 1, difficultyLevel, 5, QuestionSource.Manual));
     }
 
@@ -74,7 +74,7 @@ public class QuestionTests
     public void Constructor_WithInvalidMaxScore_ShouldThrowException(int maxScore)
     {
         // Act & Assert
-        Assert.Throws<BusinessRuleViolationException>(() => 
+        Assert.Throws<DomainValidationException>(() =>
             new Question("Valid question?", 1, 2, maxScore, QuestionSource.Manual));
     }
 
@@ -121,7 +121,7 @@ public class QuestionTests
         var question = new Question("Original question?", 1, 2, 5, QuestionSource.Manual);
 
         // Act & Assert
-        Assert.Throws<BusinessRuleViolationException>(() => 
+        Assert.Throws<DomainValidationException>(() =>
             question.UpdateQuestion(questionText, 2, 5, QuestionSource.Manual));
     }
 

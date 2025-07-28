@@ -1,4 +1,4 @@
-using Wisgenix.SharedKernel.Domain.Exceptions;
+using Wisgenix.SharedKernel.Exceptions;
 
 namespace Content.Domain.ValueObjects;
 
@@ -21,7 +21,7 @@ public class QuestionText : ValueObject
     /// </summary>
     /// <param name="value">The question text value</param>
     /// <returns>A valid QuestionText instance</returns>
-    /// <exception cref="BusinessRuleViolationException">Thrown when validation fails</exception>
+    /// <exception cref="DomainValidationException">Thrown when validation fails</exception>
     public static QuestionText Create(string value)
     {
         ValidateQuestionText(value);
@@ -32,17 +32,17 @@ public class QuestionText : ValueObject
     /// Validates a question text value
     /// </summary>
     /// <param name="value">The value to validate</param>
-    /// <exception cref="BusinessRuleViolationException">Thrown when validation fails</exception>
+    /// <exception cref="DomainValidationException">Thrown when validation fails</exception>
     private static void ValidateQuestionText(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new BusinessRuleViolationException("Question text cannot be empty");
+            throw new DomainValidationException("Question text cannot be empty");
         }
 
         if (value.Length > MaxLength)
         {
-            throw new BusinessRuleViolationException($"Question text cannot exceed {MaxLength} characters");
+            throw new DomainValidationException("Question text cannot exceed {0} characters", MaxLength);
         }
     }
 
@@ -59,7 +59,7 @@ public class QuestionText : ValueObject
             questionText = Create(value);
             return true;
         }
-        catch (BusinessRuleViolationException)
+        catch (DomainValidationException)
         {
             questionText = null;
             return false;

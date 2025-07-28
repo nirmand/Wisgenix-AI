@@ -1,6 +1,6 @@
 using Content.Domain.Entities;
 using Content.Domain.Events;
-using Wisgenix.SharedKernel.Domain.Exceptions;
+using Wisgenix.SharedKernel.Exceptions;
 using Xunit;
 
 namespace Content.Tests.Domain;
@@ -33,7 +33,7 @@ public class QuestionOptionTests
     public void Constructor_WithInvalidOptionText_ShouldThrowException(string optionText)
     {
         // Act & Assert
-        Assert.Throws<BusinessRuleViolationException>(() => new QuestionOption(optionText, 1, true));
+        Assert.Throws<DomainValidationException>(() => new QuestionOption(optionText, 1, true));
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class QuestionOptionTests
         var optionText = new string('a', 4001);
 
         // Act & Assert
-        Assert.Throws<BusinessRuleViolationException>(() => new QuestionOption(optionText, 1, true));
+        Assert.Throws<DomainValidationException>(() => new QuestionOption(optionText, 1, true));
     }
 
     [Fact]
@@ -103,7 +103,7 @@ public class QuestionOptionTests
         var option = new QuestionOption("Original text", 1, false);
 
         // Act & Assert
-        Assert.Throws<BusinessRuleViolationException>(() => option.UpdateOption(optionText, true));
+        Assert.Throws<DomainValidationException>(() => option.UpdateOption(optionText, true));
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public class QuestionOptionTests
         var newText = new string('a', 4001);
 
         // Act & Assert
-        Assert.Throws<BusinessRuleViolationException>(() => option.UpdateOption(newText, true));
+        Assert.Throws<DomainValidationException>(() => option.UpdateOption(newText, true));
     }
 
     [Fact]

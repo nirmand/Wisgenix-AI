@@ -1,6 +1,6 @@
 using Content.Domain.Entities;
 using Content.Domain.Events;
-using Wisgenix.SharedKernel.Domain.Exceptions;
+using Wisgenix.SharedKernel.Exceptions;
 using Xunit;
 
 namespace Content.Tests.Domain;
@@ -30,7 +30,7 @@ public class SubjectTests
     public void Constructor_WithInvalidName_ShouldThrowException(string subjectName)
     {
         // Act & Assert
-        Assert.Throws<BusinessRuleViolationException>(() => new Subject(subjectName));
+        Assert.Throws<DomainValidationException>(() => new Subject(subjectName));
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class SubjectTests
         var subjectName = new string('a', 201);
 
         // Act & Assert
-        Assert.Throws<BusinessRuleViolationException>(() => new Subject(subjectName));
+        Assert.Throws<DomainValidationException>(() => new Subject(subjectName));
     }
 
     [Theory]
@@ -52,7 +52,7 @@ public class SubjectTests
     public void Constructor_WithInvalidCharacters_ShouldThrowException(string subjectName)
     {
         // Act & Assert
-        Assert.Throws<BusinessRuleViolationException>(() => new Subject(subjectName));
+        Assert.Throws<DomainValidationException>(() => new Subject(subjectName));
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class SubjectTests
         var subject = new Subject("Mathematics");
 
         // Act & Assert
-        Assert.Throws<BusinessRuleViolationException>(() => subject.UpdateSubjectName(newName));
+        Assert.Throws<DomainValidationException>(() => subject.UpdateSubjectName(newName));
     }
 
     [Fact]

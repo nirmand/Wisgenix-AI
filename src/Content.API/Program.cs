@@ -9,6 +9,7 @@ using Content.Application.Mappings;
 using Content.Application.Validators;
 using Content.Application.Commands;
 using Content.Application.Handlers;
+using Content.API.Middleware;
 using Wisgenix.SharedKernel.Application;
 using Wisgenix.SharedKernel.Infrastructure.Logging;
 
@@ -127,6 +128,9 @@ app.UseSerilogRequestLogging(options =>
         diagnosticContext.Set("RemoteIP", httpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown");
     };
 });
+
+// Add global exception handling middleware
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 app.UseCors();

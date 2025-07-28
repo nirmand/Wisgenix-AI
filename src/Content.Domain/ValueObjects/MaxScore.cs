@@ -1,4 +1,4 @@
-using Wisgenix.SharedKernel.Domain.Exceptions;
+using Wisgenix.SharedKernel.Exceptions;
 
 namespace Content.Domain.ValueObjects;
 
@@ -22,7 +22,7 @@ public class MaxScore : ValueObject
     /// </summary>
     /// <param name="value">The maximum score value</param>
     /// <returns>A valid MaxScore instance</returns>
-    /// <exception cref="BusinessRuleViolationException">Thrown when validation fails</exception>
+    /// <exception cref="DomainValidationException">Thrown when validation fails</exception>
     public static MaxScore Create(int value)
     {
         ValidateMaxScore(value);
@@ -33,12 +33,12 @@ public class MaxScore : ValueObject
     /// Validates a maximum score value
     /// </summary>
     /// <param name="value">The value to validate</param>
-    /// <exception cref="BusinessRuleViolationException">Thrown when validation fails</exception>
+    /// <exception cref="DomainValidationException">Thrown when validation fails</exception>
     private static void ValidateMaxScore(int value)
     {
         if (value < MinValue || value > MaxValue)
         {
-            throw new BusinessRuleViolationException($"Max score must be between {MinValue} and {MaxValue}");
+            throw new DomainValidationException("Max score must be between {0} and {1}", MinValue, MaxValue);
         }
     }
 
@@ -55,7 +55,7 @@ public class MaxScore : ValueObject
             maxScore = Create(value);
             return true;
         }
-        catch (BusinessRuleViolationException)
+        catch (DomainValidationException)
         {
             maxScore = null;
             return false;
