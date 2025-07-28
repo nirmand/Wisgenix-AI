@@ -141,6 +141,12 @@ classDiagram
         +IReadOnlyCollection~QuestionOption~ Options
     }
     
+    class QuestionOption {
+        +OptionText OptionText
+        +int QuestionId
+        +bool IsCorrect
+    }
+    
     Subject ||--o{ Topic : contains
     Topic ||--o{ Question : contains
     Question ||--o{ QuestionOption : has
