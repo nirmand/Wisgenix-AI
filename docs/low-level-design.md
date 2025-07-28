@@ -1,51 +1,45 @@
-# Topic Entity - End-to-End Flow Documentation
+# Wisgenix - Low-Level Design Document
 
-## Component Design Overview
+## Component-Level Architecture
+
+### 1. Content.API - Presentation Layer
 
 ```mermaid
-graph LR
-    subgraph "API Layer"
-        Controller[TopicsController]
+graph TB
+    subgraph "Content.API Structure"
+        subgraph "Controllers"
+            SC[SubjectsController]
+            TC[TopicsController]
+            QC[QuestionsController]
+        end
+        
+        subgraph "Middleware"
+            GM[GlobalExceptionMiddleware]
+            CM[CorrelationMiddleware]
+            LM[LoggingMiddleware]
+        end
+        
+        subgraph "Configuration"
+            PS[Program.cs<br/>DI Container Setup]
+            AS[appsettings.json<br/>Configuration]
+        end
+        
+        subgraph "Models"
+            REQ[Request Models]
+            RES[Response Models]
+            ERR[Error Models]
+        end
     end
     
-    subgraph "Application Layer"
-        Command[CreateTopicCommand]
-        Handler[TopicCommandHandler]
-        DTO[AddTopicRequest/GetTopicResponse]
-        Validator[TopicValidator]
-        Mapper[AutoMapper]
-    end
-    
-    subgraph "Domain Layer"
-        Entity[Topic Entity]
-        Events[TopicCreatedEvent]
-        Rules[Business Rules]
-    end
-    
-    subgraph "Infrastructure Layer"
-        Repo[TopicRepository]
-        Config[TopicConfiguration]
-        Context[ContentDbContext]
-        DB[(Database)]
-    end
-    
-    Controller --> Command
-    Command --> Handler
-    Handler --> Validator
-    Handler --> Entity
-    Handler --> Repo
-    Entity --> Events
-    Entity --> Rules
-    Repo --> Context
-    Context --> Config
-    Context --> DB
-    Handler --> Mapper
-    Mapper --> DTO
+    GM --> SC
+    GM --> TC
+    GM --> QC
+    SC --> REQ
+    TC --> REQ
+    QC --> REQ
 ```
 
-## Detailed Component Breakdown
-
-### 1. **API Controller** (`Content.API/Controllers/TopicsController.cs`)
+#### Controller Design Pattern
 
 ```mermaid
 sequenceDiagram
@@ -54,228 +48,420 @@ sequenceDiagram
     participant Validator
     participant MediatR
     participant Handler
+    participant Response
     
-    Client->>Controller: POST /api/topics
-    Controller->>Validator: ValidateAsync(request)
-    Validator-->>Controller: ValidationResult
-    Controller->>MediatR: Send(CreateTopicCommand)
-    MediatR->>Handler: Handle(command)
-    Handler-->>MediatR: GetTopicResponse
-    MediatR-->>Controller: Result
-    Controller-->>Client: 201 Created + Topic
+    Client->>Controller: HTTP Request
+    Controller->>Validator: Validate Input
+    alt Validation Fails
+        Validator-->>Controller: ValidationException
+        Controller-->>Client: 400 Bad Request
+    else Validation Success
+        Controller->>MediatR: Send Command/Query
+        MediatR->>Handler: Route to Handler
+        Handler-->>MediatR: Result
+        MediatR-->>Controller: Response DTO
+        Controller->>Response: Map to HTTP Response
+        Response-->>Client: HTTP 200/201/204
+    end
 ```
 
-**Responsibilities:**
-- HTTP request/response handling
-- Input validation
-- Command dispatching via MediatR
-- HTTP status code management
+#### Key Responsibilities
+- **HTTP Protocol Handling**: Request/response lifecycle management
+- **Input Validation**: Basic format and required field validation
+- **Command/Query Dispatching**: MediatR integration
+- **Response Formatting**: Consistent API response structure
+- **Error Handling**: HTTP status code mapping
+- **Documentation**: OpenAPI/Swagger integration
 
-### 2. **Application Layer Components**
+### 2. Content.Application - Application Layer
 
-#### Command Pattern
+```mermaid
+graph TB
+    subgraph "Content.Application Structure"
+        subgraph "Commands"
+            CC[CreateSubjectCommand]
+            UC[UpdateSubjectCommand]
+            DC[DeleteSubjectCommand]
+        end
+        
+        subgraph "Queries"
+            GQ[GetSubjectQuery]
+            LQ[ListSubjectsQuery]
+            SQ[SearchSubjectsQuery]
+        end
+        
+        subgraph "Handlers"
+            CH[CommandHandlers]
+            QH[QueryHandlers]
+        end
+        
+        subgraph "DTOs"
+            REQ[Request DTOs]
+            RES[Response DTOs]
+        end
+        
+        subgraph "Validators"
+            CV[Command Validators]
+            QV[Query Validators]
+        end
+        
+        subgraph "Mappings"
+            MP[AutoMapper Profiles]
+        end
+    end
+    
+    CC --> CH
+    UC --> CH
+    DC --> CH
+    GQ --> QH
+    LQ --> QH
+    SQ --> QH
+    CH --> REQ
+    QH --> RES
+    CV --> CC
+    QV --> GQ
+    MP --> RES
+```
+
+#### CQRS Implementation Pattern
+
 ```mermaid
 classDiagram
-    class CreateTopicCommand {
-        +string TopicName
-        +int SubjectId
-        +CreateTopicCommand(topicName, subjectId)
+    class IRequest~TResponse~ {
+        <<interface>>
     }
     
-    class TopicCommandHandler {
-        -ITopicRepository _repository
+    class CreateSubjectCommand {
+        +string SubjectName
+        +string CreatedBy
+    }
+    
+    class CreateSubjectHandler {
+        -ISubjectRepository _repository
         -IUnitOfWork _unitOfWork
         -IMapper _mapper
-        -ILogger _logger
-        +Handle(CreateTopicCommand) GetTopicResponse
+        +Handle(command) GetSubjectResponse
     }
     
-    CreateTopicCommand --> TopicCommandHandler : handled by
+    class GetSubjectQuery {
+        +int SubjectId
+    }
+    
+    class GetSubjectHandler {
+        -ISubjectRepository _repository
+        -IMapper _mapper
+        +Handle(query) GetSubjectResponse
+    }
+    
+    IRequest~TResponse~ <|-- CreateSubjectCommand
+    IRequest~TResponse~ <|-- GetSubjectQuery
+    CreateSubjectCommand --> CreateSubjectHandler
+    GetSubjectQuery --> GetSubjectHandler
 ```
 
-#### Data Flow
+#### Key Responsibilities
+- **Business Workflow Orchestration**: Coordinate domain operations
+- **External Interface Adaptation**: Convert external requests to domain operations
+- **Transaction Management**: Unit of Work coordination
+- **Validation Pipeline**: FluentValidation integration
+- **Object Mapping**: DTO to domain entity transformation
+- **Event Handling**: Domain event processing
+
+### 3. Content.Domain - Domain Layer
+
 ```mermaid
-flowchart TD
-    A[AddTopicRequest] --> B[Validation]
-    B --> C[CreateTopicCommand]
-    C --> D[TopicCommandHandler]
-    D --> E[Topic Entity Creation]
-    E --> F[Repository Save]
-    F --> G[Unit of Work Commit]
-    G --> H[AutoMapper]
-    H --> I[GetTopicResponse]
+graph TB
+    subgraph "Content.Domain Structure"
+        subgraph "Entities"
+            SE[Subject Entity]
+            TE[Topic Entity]
+            QE[Question Entity]
+            OE[QuestionOption Entity]
+        end
+        
+        subgraph "Value Objects"
+            SN[SubjectName]
+            TN[TopicName]
+            QT[QuestionText]
+            DL[DifficultyLevel]
+        end
+        
+        subgraph "Domain Events"
+            SCE[SubjectCreatedEvent]
+            TCE[TopicCreatedEvent]
+            QCE[QuestionCreatedEvent]
+        end
+        
+        subgraph "Repositories"
+            SR[ISubjectRepository]
+            TR[ITopicRepository]
+            QR[IQuestionRepository]
+        end
+        
+        subgraph "Services"
+            DS[Domain Services]
+            SP[Specifications]
+        end
+        
+        subgraph "Exceptions"
+            DE[Domain Exceptions]
+            BR[Business Rule Violations]
+        end
+    end
+    
+    SE --> SN
+    TE --> TN
+    QE --> QT
+    SE --> SCE
+    TE --> TCE
+    QE --> QCE
 ```
 
-### 3. **Domain Entity** (`Content.Domain/Entities/Topic.cs`)
+#### Rich Domain Entity Pattern
 
 ```mermaid
 classDiagram
-    class Topic {
-        -List~Question~ _questions
-        +string TopicName
-        +int SubjectId
-        +IReadOnlyCollection~Question~ Questions
-        +Subject Subject
-        +Topic(topicName, subjectId)
-        +UpdateTopicName(topicName)
-        +AddQuestion(...) Question
-        +RemoveQuestion(questionId)
-        -SetTopicName(topicName)
-        -ContainsInvalidCharacters(input) bool
-    }
-    
     class AuditableEntity {
         +int Id
         +DateTime CreatedDate
         +string CreatedBy
         +DateTime ModifiedDate
         +string ModifiedBy
-        +List~BaseDomainEvent~ DomainEvents
+        +List~IDomainEvent~ DomainEvents
         +AddDomainEvent(event)
         +ClearDomainEvents()
     }
     
-    Topic --|> AuditableEntity
+    class Subject {
+        -List~Topic~ _topics
+        +SubjectName SubjectName
+        +IReadOnlyCollection~Topic~ Topics
+        +Subject(subjectName)
+        +UpdateSubjectName(name)
+        +AddTopic(topic)
+        +RemoveTopic(topicId)
+        -ValidateTopicUniqueness(topic)
+    }
+    
+    class SubjectName {
+        +string Value
+        +SubjectName Create(value)$
+        -ValidateLength(value)$
+        -ValidateCharacters(value)$
+    }
+    
+    AuditableEntity <|-- Subject
+    Subject --> SubjectName
 ```
 
-**Business Rules Enforced:**
-- Topic name cannot be empty or whitespace
-- Topic name cannot exceed 200 characters
-- Topic name cannot contain invalid characters (`<`, `>`, `&`, `"`, `'`)
-- No duplicate questions within a topic (case-insensitive)
+#### Domain Event Pattern
 
-### 4. **Infrastructure Layer**
+```mermaid
+sequenceDiagram
+    participant Entity
+    participant DomainEvent
+    participant EventHandler
+    participant ExternalService
+    
+    Entity->>Entity: Business Operation
+    Entity->>DomainEvent: AddDomainEvent()
+    Entity->>Entity: Complete Operation
+    Note over Entity: Transaction Boundary
+    Entity->>EventHandler: Publish Events
+    EventHandler->>ExternalService: Notify External Systems
+    EventHandler->>ExternalService: Update Read Models
+    EventHandler->>ExternalService: Send Notifications
+```
 
-#### Repository Pattern
+#### Key Responsibilities
+- **Business Logic Encapsulation**: Core business rules and invariants
+- **Data Integrity**: Entity validation and consistency
+- **Domain Events**: Side effect coordination
+- **Rich Behavior**: Methods that operate on entity data
+- **Invariant Protection**: Prevent invalid state transitions
+
+### 4. Content.Infrastructure - Infrastructure Layer
+
+```mermaid
+graph TB
+    subgraph "Content.Infrastructure Structure"
+        subgraph "Data"
+            CTX[ContentDbContext]
+            CFG[Entity Configurations]
+            MIG[Migrations]
+        end
+        
+        subgraph "Repositories"
+            SR[SubjectRepository]
+            TR[TopicRepository]
+            QR[QuestionRepository]
+            UOW[UnitOfWork]
+        end
+        
+        subgraph "Services"
+            AI[AzureAIService]
+            ES[External Services]
+        end
+        
+        subgraph "Configurations"
+            SC[SubjectConfiguration]
+            TC[TopicConfiguration]
+            QC[QuestionConfiguration]
+        end
+    end
+    
+    CTX --> CFG
+    CTX --> MIG
+    SR --> CTX
+    TR --> CTX
+    QR --> CTX
+    UOW --> CTX
+    CFG --> SC
+    CFG --> TC
+    CFG --> QC
+```
+
+#### Repository Implementation Pattern
+
 ```mermaid
 classDiagram
-    class ITopicRepository {
+    class ISubjectRepository {
         <<interface>>
-        +GetByIdAsync(id) Task~Topic~
-        +GetAllAsync() Task~List~Topic~~
-        +AddAsync(topic) Task~Topic~
-        +UpdateAsync(topic) Task~Topic~
+        +GetByIdAsync(id) Task~Subject~
+        +GetAllAsync() Task~List~Subject~~
+        +AddAsync(subject) Task~Subject~
+        +UpdateAsync(subject) Task~Subject~
         +DeleteAsync(id) Task
         +ExistsAsync(id) Task~bool~
+        +GetByNameAsync(name) Task~Subject~
     }
     
-    class TopicRepository {
+    class SubjectRepository {
         -ContentDbContext _context
-        +GetByIdAsync(id) Task~Topic~
-        +GetAllAsync() Task~List~Topic~~
-        +AddAsync(topic) Task~Topic~
-        +UpdateAsync(topic) Task~Topic~
+        -ILogger _logger
+        +GetByIdAsync(id) Task~Subject~
+        +GetAllAsync() Task~List~Subject~~
+        +AddAsync(subject) Task~Subject~
+        +UpdateAsync(subject) Task~Subject~
         +DeleteAsync(id) Task
         +ExistsAsync(id) Task~bool~
-    }
-    
-    ITopicRepository <|-- TopicRepository
-```
-
-#### Entity Framework Configuration
-```mermaid
-classDiagram
-    class TopicConfiguration {
-        +Configure(EntityTypeBuilder~Topic~)
+        +GetByNameAsync(name) Task~Subject~
     }
     
     class ContentDbContext {
-        +DbSet~Topic~ Topics
         +DbSet~Subject~ Subjects
+        +DbSet~Topic~ Topics
         +DbSet~Question~ Questions
-        +DbSet~QuestionOption~ QuestionOptions
+        +SaveChangesAsync() Task~int~
+        +OnModelCreating(builder)
     }
     
-    TopicConfiguration --> ContentDbContext : configures
+    ISubjectRepository <|-- SubjectRepository
+    SubjectRepository --> ContentDbContext
 ```
 
-## Complete Request Flow Example
+#### Entity Framework Configuration Pattern
 
-### Creating a New Topic
+```mermaid
+classDiagram
+    class IEntityTypeConfiguration~Subject~ {
+        <<interface>>
+        +Configure(builder)
+    }
+    
+    class SubjectConfiguration {
+        +Configure(EntityTypeBuilder~Subject~)
+    }
+    
+    class ContentDbContext {
+        +OnModelCreating(ModelBuilder)
+        +ApplyConfiguration(IEntityTypeConfiguration)
+    }
+    
+    IEntityTypeConfiguration~Subject~ <|-- SubjectConfiguration
+    ContentDbContext --> SubjectConfiguration
+```
+
+#### Key Responsibilities
+- **Data Persistence**: Entity Framework Core integration
+- **Query Optimization**: Efficient data retrieval
+- **Transaction Management**: Unit of Work implementation
+- **External Service Integration**: Azure AI, third-party APIs
+- **Database Schema Management**: Migrations and configurations
+
+## Inter-Component Communication
+
+### Request Flow Architecture
 
 ```mermaid
 sequenceDiagram
-    participant Client
-    participant API as TopicsController
-    participant Val as FluentValidator
-    participant Med as MediatR
-    participant Han as CommandHandler
-    participant Dom as Topic Entity
-    participant Repo as Repository
-    participant UoW as Unit of Work
+    participant API as Content.API
+    participant App as Content.Application
+    participant Dom as Content.Domain
+    participant Infra as Content.Infrastructure
     participant DB as Database
-    participant Map as AutoMapper
     
-    Client->>API: POST /api/topics<br/>{topicName: "Algebra", subjectId: 1}
-    
-    API->>Val: ValidateAsync(AddTopicRequest)
-    Val-->>API: ValidationResult.IsValid = true
-    
-    API->>Med: Send(CreateTopicCommand)
-    Med->>Han: Handle(CreateTopicCommand)
-    
-    Han->>Repo: ExistsAsync(subjectId)
-    Repo-->>Han: true
-    
-    Han->>Dom: new Topic("Algebra", 1)
-    Dom->>Dom: SetTopicName("Algebra")
-    Dom->>Dom: AddDomainEvent(TopicCreatedEvent)
-    Dom-->>Han: Topic instance
-    
-    Han->>Repo: AddAsync(topic)
-    Repo-->>Han: Topic with Id
-    
-    Han->>UoW: SaveChangesAsync()
-    UoW->>DB: INSERT INTO Topics...
-    DB-->>UoW: Success
-    UoW-->>Han: Success
-    
-    Han->>Map: Map<GetTopicResponse>(topic)
-    Map-->>Han: GetTopicResponse
-    
-    Han-->>Med: GetTopicResponse
-    Med-->>API: GetTopicResponse
-    API-->>Client: 201 Created + GetTopicResponse
+    API->>App: Command/Query
+    App->>App: Validate Request
+    App->>Dom: Create/Retrieve Entity
+    Dom->>Dom: Apply Business Rules
+    Dom->>Dom: Raise Domain Events
+    App->>Infra: Repository Operation
+    Infra->>DB: SQL Query/Command
+    DB-->>Infra: Result Set
+    Infra-->>App: Domain Entity
+    App->>App: Process Domain Events
+    App->>App: Map to DTO
+    App-->>API: Response DTO
 ```
 
-## Domain Events Flow
+### Dependency Flow
 
 ```mermaid
-sequenceDiagram
-    participant Entity as Topic Entity
-    participant Event as TopicCreatedEvent
-    participant Handler as Event Handler
-    participant Service as External Service
+graph TD
+    API[Content.API] --> App[Content.Application]
+    App --> Dom[Content.Domain]
+    App --> Infra[Content.Infrastructure]
+    Infra --> Dom
     
-    Entity->>Event: AddDomainEvent(TopicCreatedEvent)
-    Note over Entity: Business operation completes
-    Entity->>Handler: Publish domain events
-    Handler->>Service: Notify external systems
-    Handler->>Service: Update read models
-    Handler->>Service: Send notifications
+    API --> SK[Wisgenix.SharedKernel]
+    App --> SK
+    Dom --> SK
+    Infra --> SK
+    
+    style Dom fill:#e1f5fe
+    style SK fill:#f3e5f5
 ```
 
 ## Error Handling Strategy
 
 ```mermaid
 flowchart TD
-    A[Request] --> B{Validation}
-    B -->|Invalid| C[400 Bad Request]
+    A[Request] --> B{Input Validation}
+    B -->|Invalid| C[400 Bad Request<br/>ValidationException]
     B -->|Valid| D[Business Logic]
     D --> E{Business Rules}
-    E -->|Violation| F[400 Business Rule Violation]
+    E -->|Violation| F[400 Bad Request<br/>BusinessRuleViolationException]
     E -->|Valid| G[Data Access]
     G --> H{Data Operation}
-    H -->|Not Found| I[404 Not Found]
-    H -->|Duplicate| J[409 Conflict]
+    H -->|Not Found| I[404 Not Found<br/>EntityNotFoundException]
+    H -->|Conflict| J[409 Conflict<br/>DuplicateEntityException]
     H -->|Success| K[200/201 Success]
-    H -->|Error| L[500 Internal Server Error]
+    H -->|Database Error| L[500 Internal Server Error<br/>DatabaseException]
+    H -->|External Service Error| M[502 Bad Gateway<br/>ExternalServiceException]
 ```
 
-This architecture ensures:
-- **Separation of Concerns**: Each layer has distinct responsibilities
-- **Testability**: Dependencies are injected and can be mocked
-- **Maintainability**: Clean boundaries between layers
-- **Scalability**: CQRS pattern allows independent scaling
-- **Domain-Driven Design**: Rich domain models with business logic
-- **Event-Driven Architecture**: Domain events for loose coupling
+## Performance Considerations
+
+### Query Optimization
+- **Eager Loading**: Include related entities when needed
+- **Projection**: Select only required fields for DTOs
+- **Pagination**: Implement efficient paging for large datasets
+- **Caching**: Repository-level caching for frequently accessed data
+
+### Memory Management
+- **Dispose Pattern**: Proper resource cleanup
+- **Async/Await**: Non-blocking I/O operations
+- **Connection Pooling**: Efficient database connection usage
+
+This low-level design provides detailed implementation guidance for each component while maintaining clean architecture principles and ensuring proper separation of concerns.
