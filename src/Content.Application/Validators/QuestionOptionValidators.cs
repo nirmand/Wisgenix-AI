@@ -1,5 +1,6 @@
 using FluentValidation;
 using Content.Application.DTOs;
+using Content.Domain.ValueObjects;
 
 namespace Content.Application.Validators;
 
@@ -25,9 +26,9 @@ public class AddQuestionOptionRequestValidator : AbstractValidator<AddQuestionOp
     public AddQuestionOptionRequestValidator()
     {
         RuleFor(x => x.OptionText)
-            .NotEmpty()
+            .Must(text => !string.IsNullOrWhiteSpace(text))
             .WithMessage("Option text is required")
-            .MaximumLength(4000)
+            .Must(text => OptionText.TryCreate(text, out _))
             .WithMessage("Option text cannot exceed 4000 characters");
 
         RuleFor(x => x.QuestionId)
@@ -51,9 +52,9 @@ public class UpdateQuestionOptionRequestValidator : AbstractValidator<UpdateQues
     public UpdateQuestionOptionRequestValidator()
     {
         RuleFor(x => x.OptionText)
-            .NotEmpty()
+            .Must(text => !string.IsNullOrWhiteSpace(text))
             .WithMessage("Option text is required")
-            .MaximumLength(4000)
+            .Must(text => OptionText.TryCreate(text, out _))
             .WithMessage("Option text cannot exceed 4000 characters");
 
         RuleFor(x => x.QuestionId)

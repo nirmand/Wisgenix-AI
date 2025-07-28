@@ -1,5 +1,6 @@
 using FluentValidation;
 using Content.Application.DTOs;
+using Content.Domain.ValueObjects;
 
 namespace Content.Application.Validators;
 
@@ -25,9 +26,9 @@ public class AddQuestionRequestValidator : AbstractValidator<AddQuestionRequest>
     public AddQuestionRequestValidator()
     {
         RuleFor(x => x.QuestionText)
-            .NotEmpty()
+            .Must(text => !string.IsNullOrWhiteSpace(text))
             .WithMessage("Question text is required")
-            .MaximumLength(1000)
+            .Must(text => QuestionText.TryCreate(text, out _))
             .WithMessage("Question text cannot exceed 1000 characters");
 
         RuleFor(x => x.TopicId)
@@ -35,11 +36,11 @@ public class AddQuestionRequestValidator : AbstractValidator<AddQuestionRequest>
             .WithMessage("Topic ID must be greater than 0");
 
         RuleFor(x => x.DifficultyLevel)
-            .InclusiveBetween(1, 5)
+            .Must(level => DifficultyLevel.TryCreate(level, out _))
             .WithMessage("Difficulty level must be between 1 and 5");
 
         RuleFor(x => x.MaxScore)
-            .InclusiveBetween(1, 10)
+            .Must(score => MaxScore.TryCreate(score, out _))
             .WithMessage("Max score must be between 1 and 10");
 
         RuleFor(x => x.QuestionSourceReference)
@@ -64,9 +65,9 @@ public class UpdateQuestionRequestValidator : AbstractValidator<UpdateQuestionRe
     public UpdateQuestionRequestValidator()
     {
         RuleFor(x => x.QuestionText)
-            .NotEmpty()
+            .Must(text => !string.IsNullOrWhiteSpace(text))
             .WithMessage("Question text is required")
-            .MaximumLength(1000)
+            .Must(text => QuestionText.TryCreate(text, out _))
             .WithMessage("Question text cannot exceed 1000 characters");
 
         RuleFor(x => x.TopicId)
@@ -74,11 +75,11 @@ public class UpdateQuestionRequestValidator : AbstractValidator<UpdateQuestionRe
             .WithMessage("Topic ID must be greater than 0");
 
         RuleFor(x => x.DifficultyLevel)
-            .InclusiveBetween(1, 5)
+            .Must(level => DifficultyLevel.TryCreate(level, out _))
             .WithMessage("Difficulty level must be between 1 and 5");
 
         RuleFor(x => x.MaxScore)
-            .InclusiveBetween(1, 10)
+            .Must(score => MaxScore.TryCreate(score, out _))
             .WithMessage("Max score must be between 1 and 10");
 
         RuleFor(x => x.QuestionSourceReference)

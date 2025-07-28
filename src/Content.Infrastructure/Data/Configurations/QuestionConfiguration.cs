@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Content.Domain.Entities;
+using Content.Domain.ValueObjects;
 
 namespace Content.Infrastructure.Data.Configurations;
 
@@ -21,17 +22,26 @@ public class QuestionConfiguration : IEntityTypeConfiguration<Question>
 
         builder.Property(q => q.QuestionText)
             .IsRequired()
-            .HasMaxLength(1000);
+            .HasMaxLength(1000)
+            .HasConversion(
+                v => v.Value,
+                v => QuestionText.Create(v));
 
         builder.Property(q => q.TopicId)
             .HasColumnName("TopicID")
             .IsRequired();
 
         builder.Property(q => q.DifficultyLevel)
-            .IsRequired();
+            .IsRequired()
+            .HasConversion(
+                v => v.Value,
+                v => DifficultyLevel.Create(v));
 
         builder.Property(q => q.MaxScore)
-            .IsRequired();
+            .IsRequired()
+            .HasConversion(
+                v => v.Value,
+                v => MaxScore.Create(v));
 
         builder.Property(q => q.GeneratedBy)
             .IsRequired()

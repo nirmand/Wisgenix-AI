@@ -2,6 +2,7 @@ using Wisgenix.SharedKernel.Domain;
 using Wisgenix.SharedKernel.Domain.Exceptions;
 using Wisgenix.SharedKernel.Domain.Enums;
 using Content.Domain.Events;
+using Content.Domain.ValueObjects;
 
 namespace Content.Domain.Entities;
 
@@ -12,10 +13,10 @@ public class Question : AuditableEntity
 {
     private readonly List<QuestionOption> _options = new();
 
-    public string QuestionText { get; private set; } = string.Empty;
+    public QuestionText QuestionText { get; private set; } = QuestionText.Create("Default");
     public int TopicId { get; private set; }
-    public int DifficultyLevel { get; private set; }
-    public int MaxScore { get; private set; }
+    public DifficultyLevel DifficultyLevel { get; private set; } = DifficultyLevel.Create(1);
+    public MaxScore MaxScore { get; private set; } = MaxScore.Create(1);
     public QuestionSource GeneratedBy { get; private set; }
     public string? QuestionSourceReference { get; private set; }
     
@@ -27,29 +28,29 @@ public class Question : AuditableEntity
     // Private constructor for EF Core
     private Question() { }
 
-    public Question(string questionText, int topicId, int difficultyLevel, int maxScore, 
+    public Question(string questionText, int topicId, int difficultyLevel, int maxScore,
         QuestionSource generatedBy, string? questionSourceReference = null)
     {
-        SetQuestionText(questionText);
+        QuestionText = QuestionText.Create(questionText);
         TopicId = topicId;
-        SetDifficultyLevel(difficultyLevel);
-        SetMaxScore(maxScore);
+        DifficultyLevel = DifficultyLevel.Create(difficultyLevel);
+        MaxScore = MaxScore.Create(maxScore);
         GeneratedBy = generatedBy;
         SetQuestionSourceReference(questionSourceReference);
-        
-        AddDomainEvent(new QuestionCreatedEvent(Id, questionText, topicId));
+
+        AddDomainEvent(new QuestionCreatedEvent(Id, QuestionText.Value, topicId));
     }
 
-    public void UpdateQuestion(string questionText, int difficultyLevel, int maxScore, 
+    public void UpdateQuestion(string questionText, int difficultyLevel, int maxScore,
         QuestionSource generatedBy, string? questionSourceReference = null)
     {
-        SetQuestionText(questionText);
-        SetDifficultyLevel(difficultyLevel);
-        SetMaxScore(maxScore);
+        QuestionText = QuestionText.Create(questionText);
+        DifficultyLevel = DifficultyLevel.Create(difficultyLevel);
+        MaxScore = MaxScore.Create(maxScore);
         GeneratedBy = generatedBy;
         SetQuestionSourceReference(questionSourceReference);
-        
-        AddDomainEvent(new QuestionUpdatedEvent(Id, questionText));
+
+        AddDomainEvent(new QuestionUpdatedEvent(Id, QuestionText.Value));
     }
 
     public QuestionOption AddOption(string optionText, bool isCorrect)
@@ -69,7 +70,7 @@ public class Question : AuditableEntity
         }
 
         _options.Remove(option);
-        AddDomainEvent(new QuestionOptionRemovedEvent(Id, optionId, option.OptionText));
+        AddDomainEvent(new QuestionOptionRemovedEvent(Id, optionId, option.OptionText.Value));
     }
 
     public void ValidateHasCorrectAnswer()
@@ -80,40 +81,7 @@ public class Question : AuditableEntity
         }
     }
 
-    private void SetQuestionText(string questionText)
-    {
-        if (string.IsNullOrWhiteSpace(questionText))
-        {
-            throw new BusinessRuleViolationException("Question text cannot be empty");
-        }
 
-        if (questionText.Length > 1000)
-        {
-            throw new BusinessRuleViolationException("Question text cannot exceed 1000 characters");
-        }
-
-        QuestionText = questionText.Trim();
-    }
-
-    private void SetDifficultyLevel(int difficultyLevel)
-    {
-        if (difficultyLevel < 1 || difficultyLevel > 5)
-        {
-            throw new BusinessRuleViolationException("Difficulty level must be between 1 and 5");
-        }
-
-        DifficultyLevel = difficultyLevel;
-    }
-
-    private void SetMaxScore(int maxScore)
-    {
-        if (maxScore < 1 || maxScore > 10)
-        {
-            throw new BusinessRuleViolationException("Max score must be between 1 and 10");
-        }
-
-        MaxScore = maxScore;
-    }
 
     private void SetQuestionSourceReference(string? questionSourceReference)
     {

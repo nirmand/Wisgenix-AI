@@ -1,5 +1,6 @@
 using FluentValidation;
 using Content.Application.DTOs;
+using Content.Domain.ValueObjects;
 
 namespace Content.Application.Validators;
 
@@ -25,10 +26,10 @@ public class AddTopicRequestValidator : AbstractValidator<AddTopicRequest>, IAdd
     public AddTopicRequestValidator()
     {
         RuleFor(x => x.TopicName)
-            .NotEmpty()
+            .Must(name => !string.IsNullOrWhiteSpace(name))
             .WithMessage("Topic name is required")
-            .MaximumLength(200)
-            .WithMessage("Topic name must not exceed 200 characters")
+            .Must(name => name == null || name.Length <= TopicName.MaxLength)
+            .WithMessage($"Topic name must not exceed {TopicName.MaxLength} characters")
             .Must(BeValidTopicName)
             .WithMessage("Topic name contains invalid characters");
 
@@ -40,8 +41,9 @@ public class AddTopicRequestValidator : AbstractValidator<AddTopicRequest>, IAdd
     private static bool BeValidTopicName(string topicName)
     {
         if (string.IsNullOrWhiteSpace(topicName))
-            return false;
+            return true; // Let other rules handle null/empty
 
+        // Only check for invalid characters
         char[] invalidChars = { '>', '<', '&', '"', '\'' };
         return !topicName.Any(c => invalidChars.Contains(c));
     }
@@ -62,10 +64,10 @@ public class UpdateTopicRequestValidator : AbstractValidator<UpdateTopicRequest>
     public UpdateTopicRequestValidator()
     {
         RuleFor(x => x.TopicName)
-            .NotEmpty()
+            .Must(name => !string.IsNullOrWhiteSpace(name))
             .WithMessage("Topic name is required")
-            .MaximumLength(200)
-            .WithMessage("Topic name must not exceed 200 characters")
+            .Must(name => name == null || name.Length <= TopicName.MaxLength)
+            .WithMessage($"Topic name must not exceed {TopicName.MaxLength} characters")
             .Must(BeValidTopicName)
             .WithMessage("Topic name contains invalid characters");
 
@@ -77,11 +79,14 @@ public class UpdateTopicRequestValidator : AbstractValidator<UpdateTopicRequest>
     private static bool BeValidTopicName(string topicName)
     {
         if (string.IsNullOrWhiteSpace(topicName))
-            return false;
+            return true; // Let other rules handle null/empty
 
+        // Only check for invalid characters
         char[] invalidChars = { '>', '<', '&', '"', '\'' };
         return !topicName.Any(c => invalidChars.Contains(c));
     }
+
+
 
     async Task<ValidationResult> IValidator<UpdateTopicRequest>.ValidateAsync(UpdateTopicRequest instance, CancellationToken cancellationToken)
     {

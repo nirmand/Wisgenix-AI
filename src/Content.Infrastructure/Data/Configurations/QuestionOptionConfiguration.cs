@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Content.Domain.Entities;
+using Content.Domain.ValueObjects;
 
 namespace Content.Infrastructure.Data.Configurations;
 
@@ -21,7 +22,10 @@ public class QuestionOptionConfiguration : IEntityTypeConfiguration<QuestionOpti
 
         builder.Property(o => o.OptionText)
             .IsRequired()
-            .HasMaxLength(4000);
+            .HasMaxLength(4000)
+            .HasConversion(
+                v => v.Value,
+                v => OptionText.Create(v));
 
         builder.Property(o => o.QuestionId)
             .HasColumnName("QuestionID")

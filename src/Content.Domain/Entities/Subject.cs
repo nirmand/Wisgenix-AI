@@ -1,6 +1,7 @@
 using Wisgenix.SharedKernel.Domain;
 using Wisgenix.SharedKernel.Domain.Exceptions;
 using Content.Domain.Events;
+using Content.Domain.ValueObjects;
 
 namespace Content.Domain.Entities;
 
@@ -11,7 +12,7 @@ public class Subject : AuditableEntity
 {
     private readonly List<Topic> _topics = new();
 
-    public string SubjectName { get; private set; } = string.Empty;
+    public SubjectName SubjectName { get; private set; } = SubjectName.Create("Default");
     public IReadOnlyCollection<Topic> Topics => _topics.AsReadOnly();
 
     // Private constructor for EF Core
@@ -19,20 +20,20 @@ public class Subject : AuditableEntity
 
     public Subject(string subjectName)
     {
-        SetSubjectName(subjectName);
-        AddDomainEvent(new SubjectCreatedEvent(Id, subjectName));
+        SubjectName = SubjectName.Create(subjectName);
+        AddDomainEvent(new SubjectCreatedEvent(Id, SubjectName.Value));
     }
 
     public void UpdateSubjectName(string subjectName)
     {
-        var oldName = SubjectName;
-        SetSubjectName(subjectName);
-        AddDomainEvent(new SubjectUpdatedEvent(Id, oldName, subjectName));
+        var oldName = SubjectName.Value;
+        SubjectName = SubjectName.Create(subjectName);
+        AddDomainEvent(new SubjectUpdatedEvent(Id, oldName, SubjectName.Value));
     }
 
     public Topic AddTopic(string topicName)
     {
-        if (_topics.Any(t => t.TopicName.Equals(topicName, StringComparison.OrdinalIgnoreCase)))
+        if (_topics.Any(t => t.TopicName.Value.Equals(topicName, StringComparison.OrdinalIgnoreCase)))
         {
             throw new DuplicateEntityException(nameof(Topic), nameof(Topic.TopicName), topicName);
         }
@@ -52,32 +53,8 @@ public class Subject : AuditableEntity
         }
 
         _topics.Remove(topic);
-        AddDomainEvent(new TopicRemovedFromSubjectEvent(Id, topicId, topic.TopicName));
+        AddDomainEvent(new TopicRemovedFromSubjectEvent(Id, topicId, topic.TopicName.Value));
     }
 
-    private void SetSubjectName(string subjectName)
-    {
-        if (string.IsNullOrWhiteSpace(subjectName))
-        {
-            throw new BusinessRuleViolationException("Subject name cannot be empty");
-        }
 
-        if (subjectName.Length > 200)
-        {
-            throw new BusinessRuleViolationException("Subject name cannot exceed 200 characters");
-        }
-
-        if (ContainsInvalidCharacters(subjectName))
-        {
-            throw new BusinessRuleViolationException("Subject name contains invalid characters");
-        }
-
-        SubjectName = subjectName.Trim();
-    }
-
-    private static bool ContainsInvalidCharacters(string input)
-    {
-        char[] invalidChars = { '>', '<', '&', '"', '\'' };
-        return input.Any(c => invalidChars.Contains(c));
-    }
 }

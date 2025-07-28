@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Content.Domain.Entities;
+using Content.Domain.ValueObjects;
 
 namespace Content.Infrastructure.Data.Configurations;
 
@@ -21,7 +22,10 @@ public class TopicConfiguration : IEntityTypeConfiguration<Topic>
 
         builder.Property(t => t.TopicName)
             .IsRequired()
-            .HasMaxLength(200);
+            .HasMaxLength(200)
+            .HasConversion(
+                v => v.Value,
+                v => TopicName.Create(v));
 
         builder.Property(t => t.SubjectId)
             .HasColumnName("SubjectID")

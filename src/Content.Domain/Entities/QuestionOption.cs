@@ -1,6 +1,7 @@
 using Wisgenix.SharedKernel.Domain;
 using Wisgenix.SharedKernel.Domain.Exceptions;
 using Content.Domain.Events;
+using Content.Domain.ValueObjects;
 
 namespace Content.Domain.Entities;
 
@@ -9,7 +10,7 @@ namespace Content.Domain.Entities;
 /// </summary>
 public class QuestionOption : AuditableEntity
 {
-    public string OptionText { get; private set; } = string.Empty;
+    public OptionText OptionText { get; private set; } = OptionText.Create("Default");
     public int QuestionId { get; private set; }
     public bool IsCorrect { get; private set; }
 
@@ -21,33 +22,20 @@ public class QuestionOption : AuditableEntity
 
     public QuestionOption(string optionText, int questionId, bool isCorrect)
     {
-        SetOptionText(optionText);
+        OptionText = OptionText.Create(optionText);
         QuestionId = questionId;
         IsCorrect = isCorrect;
-        
-        AddDomainEvent(new QuestionOptionCreatedEvent(Id, optionText, questionId, isCorrect));
+
+        AddDomainEvent(new QuestionOptionCreatedEvent(Id, OptionText.Value, questionId, isCorrect));
     }
 
     public void UpdateOption(string optionText, bool isCorrect)
     {
-        SetOptionText(optionText);
+        OptionText = OptionText.Create(optionText);
         IsCorrect = isCorrect;
-        
-        AddDomainEvent(new QuestionOptionUpdatedEvent(Id, optionText, isCorrect));
+
+        AddDomainEvent(new QuestionOptionUpdatedEvent(Id, OptionText.Value, isCorrect));
     }
 
-    private void SetOptionText(string optionText)
-    {
-        if (string.IsNullOrWhiteSpace(optionText))
-        {
-            throw new BusinessRuleViolationException("Option text cannot be empty");
-        }
 
-        if (optionText.Length > 4000)
-        {
-            throw new BusinessRuleViolationException("Option text cannot exceed 4000 characters");
-        }
-
-        OptionText = optionText.Trim();
-    }
 }

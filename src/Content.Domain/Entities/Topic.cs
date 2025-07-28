@@ -1,6 +1,7 @@
 using Wisgenix.SharedKernel.Domain;
 using Wisgenix.SharedKernel.Domain.Exceptions;
 using Content.Domain.Events;
+using Content.Domain.ValueObjects;
 
 namespace Content.Domain.Entities;
 
@@ -11,7 +12,7 @@ public class Topic : AuditableEntity
 {
     private readonly List<Question> _questions = new();
 
-    public string TopicName { get; private set; } = string.Empty;
+    public TopicName TopicName { get; private set; } = TopicName.Create("Default");
     public int SubjectId { get; private set; }
     public IReadOnlyCollection<Question> Questions => _questions.AsReadOnly();
 
@@ -23,22 +24,22 @@ public class Topic : AuditableEntity
 
     public Topic(string topicName, int subjectId)
     {
-        SetTopicName(topicName);
+        TopicName = TopicName.Create(topicName);
         SubjectId = subjectId;
-        AddDomainEvent(new TopicCreatedEvent(Id, topicName, subjectId));
+        AddDomainEvent(new TopicCreatedEvent(Id, TopicName.Value, subjectId));
     }
 
     public void UpdateTopicName(string topicName)
     {
-        var oldName = TopicName;
-        SetTopicName(topicName);
-        AddDomainEvent(new TopicUpdatedEvent(Id, oldName, topicName));
+        var oldName = TopicName.Value;
+        TopicName = TopicName.Create(topicName);
+        AddDomainEvent(new TopicUpdatedEvent(Id, oldName, TopicName.Value));
     }
 
     public Question AddQuestion(string questionText, int difficultyLevel, int maxScore, 
         Wisgenix.SharedKernel.Domain.Enums.QuestionSource generatedBy, string? questionSourceReference = null)
     {
-        if (_questions.Any(q => q.QuestionText.Equals(questionText, StringComparison.OrdinalIgnoreCase)))
+        if (_questions.Any(q => q.QuestionText.Value.Equals(questionText, StringComparison.OrdinalIgnoreCase)))
         {
             throw new DuplicateEntityException(nameof(Question), nameof(Question.QuestionText), questionText);
         }
@@ -58,32 +59,8 @@ public class Topic : AuditableEntity
         }
 
         _questions.Remove(question);
-        AddDomainEvent(new QuestionRemovedFromTopicEvent(Id, questionId, question.QuestionText));
+        AddDomainEvent(new QuestionRemovedFromTopicEvent(Id, questionId, question.QuestionText.Value));
     }
 
-    private void SetTopicName(string topicName)
-    {
-        if (string.IsNullOrWhiteSpace(topicName))
-        {
-            throw new BusinessRuleViolationException("Topic name cannot be empty");
-        }
 
-        if (topicName.Length > 200)
-        {
-            throw new BusinessRuleViolationException("Topic name cannot exceed 200 characters");
-        }
-
-        if (ContainsInvalidCharacters(topicName))
-        {
-            throw new BusinessRuleViolationException("Topic name contains invalid characters");
-        }
-
-        TopicName = topicName.Trim();
-    }
-
-    private static bool ContainsInvalidCharacters(string input)
-    {
-        char[] invalidChars = { '>', '<', '&', '"', '\'' };
-        return input.Any(c => invalidChars.Contains(c));
-    }
 }

@@ -1,5 +1,6 @@
 using FluentValidation;
 using Content.Application.DTOs;
+using Content.Domain.ValueObjects;
 
 namespace Content.Application.Validators;
 
@@ -25,10 +26,10 @@ public class AddSubjectRequestValidator : AbstractValidator<AddSubjectRequest>, 
     public AddSubjectRequestValidator()
     {
         RuleFor(x => x.SubjectName)
-            .NotEmpty()
+            .Must(name => !string.IsNullOrWhiteSpace(name))
             .WithMessage("Subject name is required")
-            .MaximumLength(200)
-            .WithMessage("Subject name must not exceed 200 characters")
+            .Must(name => name == null || name.Length <= SubjectName.MaxLength)
+            .WithMessage($"Subject name must not exceed {SubjectName.MaxLength} characters")
             .Must(BeValidSubjectName)
             .WithMessage("Subject name contains invalid characters");
     }
@@ -36,8 +37,9 @@ public class AddSubjectRequestValidator : AbstractValidator<AddSubjectRequest>, 
     private static bool BeValidSubjectName(string subjectName)
     {
         if (string.IsNullOrWhiteSpace(subjectName))
-            return false;
+            return true; // Let other rules handle null/empty
 
+        // Only check for invalid characters
         char[] invalidChars = { '>', '<', '&', '"', '\'' };
         return !subjectName.Any(c => invalidChars.Contains(c));
     }
@@ -58,10 +60,10 @@ public class UpdateSubjectRequestValidator : AbstractValidator<UpdateSubjectRequ
     public UpdateSubjectRequestValidator()
     {
         RuleFor(x => x.SubjectName)
-            .NotEmpty()
+            .Must(name => !string.IsNullOrWhiteSpace(name))
             .WithMessage("Subject name is required")
-            .MaximumLength(200)
-            .WithMessage("Subject name must not exceed 200 characters")
+            .Must(name => name == null || name.Length <= SubjectName.MaxLength)
+            .WithMessage($"Subject name must not exceed {SubjectName.MaxLength} characters")
             .Must(BeValidSubjectName)
             .WithMessage("Subject name contains invalid characters");
     }
@@ -69,11 +71,14 @@ public class UpdateSubjectRequestValidator : AbstractValidator<UpdateSubjectRequ
     private static bool BeValidSubjectName(string subjectName)
     {
         if (string.IsNullOrWhiteSpace(subjectName))
-            return false;
+            return true; // Let other rules handle null/empty
 
+        // Only check for invalid characters
         char[] invalidChars = { '>', '<', '&', '"', '\'' };
         return !subjectName.Any(c => invalidChars.Contains(c));
     }
+
+
 
     async Task<ValidationResult> IValidator<UpdateSubjectRequest>.ValidateAsync(UpdateSubjectRequest instance, CancellationToken cancellationToken)
     {
