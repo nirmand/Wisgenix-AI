@@ -118,38 +118,18 @@ graph TB
 ```mermaid
 classDiagram
     class Subject {
-        +SubjectName SubjectName
-        +IReadOnlyCollection~Topic~ Topics
-        +Subject(subjectName)
-        +UpdateSubjectName(name)
-        +AddTopic(topic)
+        +SubjectName subjectName
+        +Topics topics
+        +addTopic() void
     }
     
     class Topic {
-        +TopicName TopicName
-        +int SubjectId
-        +IReadOnlyCollection~Question~ Questions
-        +Topic(topicName, subjectId)
-        +AddQuestion(question)
-    }
-    
-    class Question {
-        +QuestionText QuestionText
-        +int TopicId
-        +DifficultyLevel Difficulty
-        +MaxScore Score
-        +IReadOnlyCollection~QuestionOption~ Options
-    }
-    
-    class QuestionOption {
-        +OptionText OptionText
-        +int QuestionId
-        +bool IsCorrect
+        +TopicName topicName
+        +SubjectId subjectId
+        +addQuestion() void
     }
     
     Subject ||--o{ Topic : contains
-    Topic ||--o{ Question : contains
-    Question ||--o{ QuestionOption : has
 ```
 
 ### 4. Infrastructure Layer
@@ -272,3 +252,4 @@ graph LR
 ```
 
 This high-level design provides a solid foundation for a maintainable, scalable, and testable content management system following industry best practices and clean architecture principles.
+
