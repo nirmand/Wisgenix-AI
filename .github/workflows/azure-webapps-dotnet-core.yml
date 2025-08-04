@@ -6,7 +6,7 @@ env:
   AZURE_WEBAPP_PACKAGE_PATH: './publish'
   DOTNET_VERSION: '9.x'
   SOLUTION_PATH: "./src/Content.sln"
-  API_PROJECT_PATH: "./src/Content.API"
+  API_PROJECT_PATH: "./src/Content.API/Content.API.csproj"
   PUBLISH_DIR: "./publish"
   ARTIFACTS_DIR: "./src/Content.API/publish" # Artifacts will be picked from this directory
   DB_CONTEXT_NAME: "ContentDbContext"
