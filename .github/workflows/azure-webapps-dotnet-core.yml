@@ -36,10 +36,7 @@ jobs:
 
       - name: Build with dotnet
         run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release
-
-      - name: dotnet publish
-        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
-
+        
       - name: Test
         run: dotnet test ${{ env.SOLUTION_PATH }} --configuration Release --no-restore --no-build --verbosity normal
 
