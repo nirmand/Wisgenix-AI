@@ -7,6 +7,7 @@ env:
   SOLUTION_PATH: "./src/Content.sln"
   API_PROJECT_PATH: "./src/Content.API"
   PUBLISH_DIR: "./publish"
+  ARTIFACTS_DIR: "./src/Content.API/publish"
 
 on:
   workflow_dispatch:
@@ -50,7 +51,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: .net-app
-          path: ${{ env.PUBLISH_DIR }}
+          path: ${{ env.ARTIFACTS_DIR }}
 
   deploy:
     name: Deploy as Azure App
