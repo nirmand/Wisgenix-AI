@@ -10,6 +10,7 @@ env:
   PUBLISH_DIR: "./publish"
   ARTIFACTS_DIR: "./src/Content.API/publish" # Artifacts will be picked from this directory
   DB_CONTEXT_NAME: "ContentDbContext"
+  ConnectionStrings__ContentDbContext: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
 
 on:
   workflow_dispatch:
@@ -52,7 +53,7 @@ jobs:
       - name: Apply Entity Framework Migrations
         # This step runs the migrations. It uses the connection string from GitHub secrets
         # and the ASPNETCORE_ENVIRONMENT to ensure it connects to the production database.
-        run: dotnet ef database update --project Content.Infrastructure/Content.Infrastructure.csproj --startup-project Content.API/Content.API.csproj --context ${{ env.DB_CONTEXT_NAME }} --connection "${{ secrets.AZURE_SQL_CONNECTION_STRING }}"
+        run: dotnet ef database update --project Content.Infrastructure/Content.Infrastructure.csproj --startup-project Content.API/Content.API.csproj --context ${{ env.DB_CONTEXT_NAME }} --connection "${{ env.ConnectionStrings__ContentDbContext }}"
         # Set the working directory to the project directory to ensure EF can find the context
         working-directory: ./src/
         # EF Core CLI requires the connection string to be passed via the command line or environment variables
