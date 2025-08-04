@@ -1,13 +1,15 @@
 name: Build and deploy ASP.Net Core app to an Azure Web App
 
 env:
-  AZURE_WEBAPP_NAME: wisgenix-content-app    # set this to the name of your Azure Web App
-  AZURE_WEBAPP_PACKAGE_PATH: './publish'      # set this to the path to your web app project, defaults to the repository root
-  DOTNET_VERSION: '9.x'                 # set this to the .NET Core version to use
+  ASPNETCORE_ENVIRONMENT: "Production"
+  AZURE_WEBAPP_NAME: wisgenix-content-app
+  AZURE_WEBAPP_PACKAGE_PATH: './publish'
+  DOTNET_VERSION: '9.x'
   SOLUTION_PATH: "./src/Content.sln"
   API_PROJECT_PATH: "./src/Content.API"
   PUBLISH_DIR: "./publish"
-  ARTIFACTS_DIR: "./src/Content.API/publish"
+  ARTIFACTS_DIR: "./src/Content.API/publish" # Artifacts will be picked from this directory
+  DB_CONTEXT_NAME: "ContentDbContext"
 
 on:
   workflow_dispatch:
@@ -43,6 +45,18 @@ jobs:
 
       - name: Publish Artifacts
         run: dotnet publish ${{ env.API_PROJECT_PATH }} --configuration Release --no-restore --no-build --property:PublishDir=${{ env.PUBLISH_DIR }}
+
+      - name: Install EF Core CLI tool
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Apply Entity Framework Migrations
+        # This step runs the migrations. It uses the connection string from GitHub secrets
+        # and the ASPNETCORE_ENVIRONMENT to ensure it connects to the production database.
+        run: dotnet ef database update --project ${{ env.API_PROJECT_PATH }} --startup-project ${{ env.API_PROJECT_PATH }} --context ${{ env.DB_CONTEXT_NAME }} --connection "${{ secrets.AZURE_SQL_CONNECTION_STRING }}"
+        # Set the working directory to the project directory to ensure EF can find the context
+        working-directory: ./src/Content.API/
+        # EF Core CLI requires the connection string to be passed via the command line or environment variables
+        # The connection string is a sensitive value, so we pass it directly here from a secret.
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
