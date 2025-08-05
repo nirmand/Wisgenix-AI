@@ -24,16 +24,9 @@ public class TopicsControllerTests : IClassFixture<WebApplicationFactory<Program
             builder.ConfigureServices(services =>
             {
                 // Remove all DbContext related services
-                var descriptorsToRemove = services.Where(d =>
-                    d.ServiceType == typeof(DbContextOptions<ContentDbContext>) ||
-                    d.ServiceType == typeof(ContentDbContext) ||
-                    d.ServiceType.IsGenericType && d.ServiceType.GetGenericTypeDefinition() == typeof(DbContextOptions<>))
-                    .ToList();
-
-                foreach (var descriptor in descriptorsToRemove)
-                {
+                var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ContentDbContext>));
+                if (descriptor != null)
                     services.Remove(descriptor);
-                }
 
                 // Add SQLite file-based database for testing
                 services.AddDbContext<ContentDbContext>(options =>
