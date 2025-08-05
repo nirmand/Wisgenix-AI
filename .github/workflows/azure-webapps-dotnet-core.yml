@@ -9,7 +9,7 @@ env:
   API_PROJECT_PATH: "./src/Content.API/Content.API.csproj"
   PUBLISH_DIR: "./publish"
   ARTIFACTS_DIR: "./src/Content.API/publish" # Artifacts will be picked from this directory
-  DB_CONTEXT_NAME: "ContentDbContext"
+  DB_CONTEXT_NAME: "ContentDbContext"  
 
 on:
   workflow_dispatch:
@@ -60,6 +60,8 @@ jobs:
       - name: Apply Entity Framework Migrations
         run: dotnet ef database update --project Content.Infrastructure/Content.Infrastructure.csproj --startup-project Content.API/Content.API.csproj --context ${{ env.DB_CONTEXT_NAME }}
         working-directory: ./src/
+        env:
+          ConnectionStrings__DefaultConnection: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
