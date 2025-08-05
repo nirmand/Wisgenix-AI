@@ -65,6 +65,7 @@ jobs:
         working-directory: ./src/
         env:
           ConnectionStrings__DefaultConnection: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
+          DatabaseProvider: "Production"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4

@@ -21,9 +21,13 @@ var databaseProvider = builder.Configuration["DatabaseProvider"] ?? "";
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var fullLogsPath = Path.GetFullPath(logsPath);
 
-if (String.IsNullOrEmpty(databaseProvider) || String.IsNullOrEmpty(connectionString))
+if (String.IsNullOrEmpty(databaseProvider))
 {
-    throw new Exception("Missing Configurations - Database connnection provider and information not found!");
+    throw new Exception("Missing Configurations - Database connnection provider not found!");
+}
+if (String.IsNullOrEmpty(connectionString))
+{
+    throw new Exception("Missing Configurations - Connection String not found!");
 }
 
 // Ensure logs directory exists
