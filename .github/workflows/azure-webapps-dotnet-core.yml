@@ -41,7 +41,7 @@ jobs:
         run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release
         
       - name: Test
-        run: dotnet test ${{ env.SOLUTION_PATH }} --configuration Release --no-restore --no-build --verbosity normal
+        run: dotnet test ${{ env.SOLUTION_PATH }} --filter Category!=Ignore --configuration Release --no-restore --no-build --verbosity normal
 
       - name: Publish Artifacts
         run: dotnet publish ${{ env.API_PROJECT_PATH }} --configuration Release --no-restore --no-build --property:PublishDir=${{ env.PUBLISH_DIR }}

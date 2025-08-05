@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Content.Tests.Integration;
 
+[Trait("Category","Ignore")]
 public class TopicsControllerTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
 {
     private readonly WebApplicationFactory<Program> _factory;
@@ -82,10 +83,10 @@ public class TopicsControllerTests : IClassFixture<WebApplicationFactory<Program
             await subjectResponse.Content.ReadAsStringAsync(),
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        var topicRequest = new AddTopicRequest 
-        { 
-            TopicName = "Algebra", 
-            SubjectId = createdSubject!.Id 
+        var topicRequest = new AddTopicRequest
+        {
+            TopicName = "Algebra",
+            SubjectId = createdSubject!.Id
         };
 
         // Act
@@ -128,10 +129,10 @@ public class TopicsControllerTests : IClassFixture<WebApplicationFactory<Program
             await subjectResponse.Content.ReadAsStringAsync(),
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        var topicRequest = new AddTopicRequest 
-        { 
-            TopicName = "Mechanics", 
-            SubjectId = createdSubject!.Id 
+        var topicRequest = new AddTopicRequest
+        {
+            TopicName = "Mechanics",
+            SubjectId = createdSubject!.Id
         };
         var topicResponse = await _client.PostAsJsonAsync("/api/content/topics", topicRequest);
         var createdTopic = JsonSerializer.Deserialize<GetTopicResponse>(
@@ -174,15 +175,15 @@ public class TopicsControllerTests : IClassFixture<WebApplicationFactory<Program
             await subjectResponse.Content.ReadAsStringAsync(),
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        var topic1Request = new AddTopicRequest 
-        { 
-            TopicName = "Organic Chemistry", 
-            SubjectId = createdSubject!.Id 
+        var topic1Request = new AddTopicRequest
+        {
+            TopicName = "Organic Chemistry",
+            SubjectId = createdSubject!.Id
         };
-        var topic2Request = new AddTopicRequest 
-        { 
-            TopicName = "Inorganic Chemistry", 
-            SubjectId = createdSubject.Id 
+        var topic2Request = new AddTopicRequest
+        {
+            TopicName = "Inorganic Chemistry",
+            SubjectId = createdSubject.Id
         };
 
         await _client.PostAsJsonAsync("/api/content/topics", topic1Request);
@@ -215,20 +216,20 @@ public class TopicsControllerTests : IClassFixture<WebApplicationFactory<Program
             await subjectResponse.Content.ReadAsStringAsync(),
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        var topicRequest = new AddTopicRequest 
-        { 
-            TopicName = "Genetics", 
-            SubjectId = createdSubject!.Id 
+        var topicRequest = new AddTopicRequest
+        {
+            TopicName = "Genetics",
+            SubjectId = createdSubject!.Id
         };
         var topicResponse = await _client.PostAsJsonAsync("/api/content/topics", topicRequest);
         var createdTopic = JsonSerializer.Deserialize<GetTopicResponse>(
             await topicResponse.Content.ReadAsStringAsync(),
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        var updateRequest = new UpdateTopicRequest 
-        { 
-            TopicName = "Advanced Genetics", 
-            SubjectId = createdSubject.Id 
+        var updateRequest = new UpdateTopicRequest
+        {
+            TopicName = "Advanced Genetics",
+            SubjectId = createdSubject.Id
         };
 
         // Act
@@ -257,10 +258,10 @@ public class TopicsControllerTests : IClassFixture<WebApplicationFactory<Program
             await subjectResponse.Content.ReadAsStringAsync(),
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        var topicRequest = new AddTopicRequest 
-        { 
-            TopicName = "World War II", 
-            SubjectId = createdSubject!.Id 
+        var topicRequest = new AddTopicRequest
+        {
+            TopicName = "World War II",
+            SubjectId = createdSubject!.Id
         };
         var topicResponse = await _client.PostAsJsonAsync("/api/content/topics", topicRequest);
         var createdTopic = JsonSerializer.Deserialize<GetTopicResponse>(

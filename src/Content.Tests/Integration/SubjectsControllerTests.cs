@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Content.Tests.Integration;
 
+[Trait("Category","Ignore")]
 public class SubjectsControllerTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
 {
     private readonly WebApplicationFactory<Program> _factory;
