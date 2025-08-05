@@ -50,7 +50,10 @@ jobs:
         
       - name: Test
         run: dotnet test ${{ env.SOLUTION_PATH }} --filter Category!=Ignore --configuration Release --no-restore --no-build --verbosity normal
-
+        env:
+          ConnectionStrings__DefaultConnection: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
+          DatabaseProvider: "Production"
+        
       - name: Publish Artifacts
         run: dotnet publish ${{ env.API_PROJECT_PATH }} --configuration Release --no-restore --no-build --property:PublishDir=${{ env.PUBLISH_DIR }}
 
