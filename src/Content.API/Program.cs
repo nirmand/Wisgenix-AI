@@ -123,11 +123,11 @@ builder.Services.AddScoped<IUpdateQuestionOptionRequestValidator, UpdateQuestion
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
-{
+// if (app.Environment.IsDevelopment()) //TODO: Uncomment this later on.
+// {
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+// }
 
 // Add Serilog request logging middleware
 app.UseSerilogRequestLogging(options =>
