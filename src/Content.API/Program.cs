@@ -17,7 +17,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog with configurable path and correlation IDs
 var logsPath = builder.Configuration["LogsPath"] ?? "../../../logs";
+var databaseProvider = builder.Configuration["DatabaseProvider"] ?? "";
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var fullLogsPath = Path.GetFullPath(logsPath);
+
+if (String.IsNullOrEmpty(databaseProvider) || String.IsNullOrEmpty(connectionString))
+{
+    throw new Exception("Missing Configurations - Database connnection provider and information not found!");
+}
 
 // Ensure logs directory exists
 if (!Directory.Exists(fullLogsPath))
@@ -66,11 +73,18 @@ builder.Services.AddCors(options =>
 });
 
 // Add DbContext
-builder.Services.AddDbContext<ContentDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
-
+if (databaseProvider == "SqlServer")
+{
+    builder.Services.AddDbContext<ContentDbContext>(options =>
+        options.UseSqlServer(connectionString));
+}
+else
+{
+    builder.Services.AddDbContext<ContentDbContext>(options =>
+        options.UseSqlite(connectionString));
+}
 // Add Unit of Work
-builder.Services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<ContentDbContext>());
+    builder.Services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<ContentDbContext>());
 
 // Add repositories
 builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
@@ -148,7 +162,6 @@ if (!skipDbInit)
         using (var scope = app.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
-            var connectionString = context.Database.GetConnectionString();
 
             // Extract the database file path from connection string
             if (connectionString != null && connectionString.Contains("Data Source="))
