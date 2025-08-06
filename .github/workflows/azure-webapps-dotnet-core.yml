@@ -11,6 +11,8 @@ env:
   ARTIFACTS_DIR: "./src/Content.API/publish" # Artifacts will be picked from this directory
   DB_CONTEXT_NAME: "ContentDbContext"
   DB_PROVIDER: "SqlServer"
+  AZURE_RESOURCE_GROUP: "Wisgenix-Prod"
+  AZURE_SQL_SERVER: "wisgenix-sql"
 
 on:
   workflow_dispatch:
@@ -26,13 +28,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Azure Login with OIDC
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
@@ -61,12 +56,44 @@ jobs:
       - name: Install EF Core CLI tool
         run: dotnet tool install --global dotnet-ef
 
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          
+      - name: Get public IP address
+        id: ip
+        uses: haythem/public-ip@v1.3
+
+      - name: Add firewall rule for runner IP
+        run: |
+          az sql server firewall-rule create \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --server ${{ env.AZURE_SQL_SERVER }} \
+            --name 'GitHubActionsIP' \
+            --start-ip-address '${{ steps.ip.outputs.ipv4 }}' \
+            --end-ip-address '${{ steps.ip.outputs.ipv4 }}'
+        shell: bash
+        id: add_firewall_rule
+        
       - name: Apply Entity Framework Migrations
         run: dotnet ef database update --project Content.Infrastructure/Content.Infrastructure.csproj --startup-project Content.API/Content.API.csproj --context ${{ env.DB_CONTEXT_NAME }}
         working-directory: ./src/
         env:
           ConnectionStrings__DefaultConnection: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
           DatabaseProvider: ${{ env.DB_PROVIDER }}
+
+      - name: Remove firewall rule
+        if: always()
+        run: |
+          az sql server firewall-rule delete \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --server ${{ env.AZURE_SQL_SERVER }} \
+            --name 'GitHubActionsIP'
+        shell: bash
+        id: remove_firewall_rule
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
