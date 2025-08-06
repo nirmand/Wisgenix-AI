@@ -28,6 +28,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Azure Login with OIDC for DB Migration
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_DB_DEPLOY_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
@@ -55,13 +62,6 @@ jobs:
 
       - name: Install EF Core CLI tool
         run: dotnet tool install --global dotnet-ef
-
-      - name: Azure Login with OIDC for DB Migration
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_DB_DEPLOY_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           
       - name: Get public IP address
         id: ip
