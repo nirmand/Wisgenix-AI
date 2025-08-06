@@ -56,10 +56,10 @@ jobs:
       - name: Install EF Core CLI tool
         run: dotnet tool install --global dotnet-ef
 
-      - name: Azure Login with OIDC
+      - name: Azure Login with OIDC for DB Migration
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          client-id: ${{ secrets.AZURE_DB_DEPLOY_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           
@@ -118,10 +118,16 @@ jobs:
           name: .net-app
           path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
+      - name: Azure Login with OIDC for App Deploy
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_WEBAPP_DEPLOY_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Deploy
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
