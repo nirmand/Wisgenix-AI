@@ -41,7 +41,7 @@ jobs:
       - name: Azure Login with OIDC for DB Migration
         uses: azure/login@v2
         with:
-          client-id: 'cea86e42-d7b7-4dbf-aa35-103a96a86b32'
+          client-id: '5b13ba7c-02b0-49c9-b770-060bfabde736'
           tenant-id: '1ad5c5bb-af00-464e-875c-903d1cb25ba4'
           subscription-id: 'b97a9d60-ce8d-4626-aa99-1788170797d4'
 
