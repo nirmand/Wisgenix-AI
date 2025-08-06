@@ -31,12 +31,19 @@ jobs:
       - name: Print all environment variables
         run: env
 
+      # - name: Azure Login with OIDC for DB Migration
+      #   uses: azure/login@v2
+      #   with:
+      #     client-id: ${{ secrets.AZURE_DB_DEPLOY_CLIENT_ID }}
+      #     tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+      #     subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Azure Login with OIDC for DB Migration
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_DB_DEPLOY_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id: 'ad315266-1cfc-48ca-9ca1-e6d13c5a07ca'
+          tenant-id: '1ad5c5bb-af00-464e-875c-903d1cb25ba4'
+          subscription-id: 'b97a9d60-ce8d-4626-aa99-1788170797d4'
 
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
