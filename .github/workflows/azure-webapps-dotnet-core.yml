@@ -2,7 +2,7 @@ name: Build and deploy ASP.Net Core app to an Azure Web App
 
 env:
   ASPNETCORE_ENVIRONMENT: "Production"
-  AZURE_WEBAPP_NAME: wisgenix-content-app
+  AZURE_WEBAPP_NAME: Wisgenix-ContentService
   AZURE_WEBAPP_PACKAGE_PATH: './publish'
   DOTNET_VERSION: '9.x'
   SOLUTION_PATH: "./src/Content.sln"
@@ -12,7 +12,7 @@ env:
   DB_CONTEXT_NAME: "ContentDbContext"
   DB_PROVIDER: "SqlServer"
   AZURE_RESOURCE_GROUP: "Wisgenix-Prod"
-  AZURE_SQL_SERVER: "wisgenix-sql"
+  AZURE_SQL_SERVER: "wisgenix-sqlserver"
 
 on:
   workflow_dispatch:
