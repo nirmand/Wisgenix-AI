@@ -1,9 +1,11 @@
-name: Build and deploy ASP.Net Core app to an Azure Web App
+name: Securely deploy ASP.Net Core app to an Azure Web App
 
 env:
   ASPNETCORE_ENVIRONMENT: "Production"
   AZURE_WEBAPP_NAME: Wisgenix-ContentService
   AZURE_WEBAPP_PACKAGE_PATH: './publish'
+  AZURE_RESOURCE_GROUP: "Wisgenix-Prod"
+  AZURE_SQL_SERVER: "wisgenix-sqlserver"
   DOTNET_VERSION: '9.x'
   SOLUTION_PATH: "./src/Content.sln"
   API_PROJECT_PATH: "./src/Content.API/Content.API.csproj"
@@ -11,9 +13,7 @@ env:
   ARTIFACTS_DIR: "./src/Content.API/publish" # Artifacts will be picked from this directory
   DB_CONTEXT_NAME: "ContentDbContext"
   DB_PROVIDER: "SqlServer"
-  AZURE_RESOURCE_GROUP: "Wisgenix-Prod"
-  AZURE_SQL_SERVER: "wisgenix-sqlserver"
-
+  
 on:
   workflow_dispatch:
 
@@ -28,10 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Print all environment variables
-        run: env
-
-      - name: Set up .NET Core
+      - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -44,10 +41,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: .NET Build
+      - name: Build .NET Solution
         run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release
         
-      - name: Test
+      - name: Run Tests
         run: dotnet test ${{ env.SOLUTION_PATH }} --filter Category!=Ignore --configuration Release --no-restore --no-build --verbosity normal
         env:
           ConnectionStrings__DefaultConnection: "sqlite-db"
@@ -70,7 +67,7 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Add firewall rule for runner IP
+      - name: Add firewall rule for runner IP (JIT access)
         run: |
           az sql server firewall-rule create \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
