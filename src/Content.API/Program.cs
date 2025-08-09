@@ -80,7 +80,15 @@ builder.Services.AddCors(options =>
 if (databaseProvider == "SqlServer")
 {
     builder.Services.AddDbContext<ContentDbContext>(options =>
-        options.UseSqlServer(connectionString));
+        options.UseSqlServer(connectionString, 
+        sqlServerOptionsAction:sqlOptions =>
+            {
+                sqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 5, // Maximum number of retries
+                    maxRetryDelay: TimeSpan.FromSeconds(30), // Maximum delay between retries
+                    errorNumbersToAdd: null); // Optional: add specific error numbers to consider transient
+            }
+        ));
 }
 else
 {
